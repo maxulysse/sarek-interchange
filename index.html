@@ -1,0 +1,300 @@
+<title>Sarek Interchange</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: metro map of sarek as the interchange; lines = reads in, resources down, results out; detail card beside the map */
+:root {
+  --bg: #f5f7f6; --surface: #ffffff; --fg: #17201c; --muted: #5b6862; --rule: #d7dfdb;
+  --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --ext: #7a8781; --hub: #1d8a4e; --hub-fg: #ffffff;
+  --display: "Overpass", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 20px; }
+h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font: 800 18px/1.2 var(--display); margin: 0; }
+.sub { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend svg { flex: none; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.map { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
+.map svg { display: block; width: 100%; min-width: 760px; height: auto; }
+
+.line { fill: none; stroke-width: 7; stroke-linecap: round; transition: opacity .2s; }
+.line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
+.line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; }
+.hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
+.stn { cursor: pointer; }
+.stn circle { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transition: r .15s; }
+.stn.external circle { stroke: var(--ext); stroke-dasharray: 4 3; }
+.stn text, .elabel { fill: var(--fg); font: 600 15px var(--display); }
+.stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
+.stn:hover circle, .stn:focus-visible circle, .stn.sel circle { r: 13; }
+.stn:focus-visible { outline: none; } .stn:focus-visible circle { stroke: var(--res); }
+.hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
+.hub .ver { fill: var(--hub-fg); opacity: .7; }
+.elabel { font: 400 10.5px var(--mono); fill: var(--muted); pointer-events: none; }
+.dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; }
+svg.focus .line, svg.focus .stn, svg.focus .elabel { opacity: .18; }
+svg.focus .on { opacity: 1 !important; }
+
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.card .kicker { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; }
+.card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pill { display: inline-block; font: 600 11px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1.5px solid currentColor; }
+.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.unchecked { color: var(--muted); }
+.card a { color: var(--res); }
+.card p { margin: 0; }
+
+details { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+summary { padding: 14px 18px; cursor: pointer; font: 800 16px var(--display); }
+.scroller { overflow-x: auto; padding: 0 18px 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
+th, td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+tr.clickable { cursor: pointer; } tr.clickable:hover td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
+footer { color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Sarek Interchange</h1>
+    <p class="sub">Where nf-core/sarek gets its reads and resources, and where its variants go next.
+    Each line is a handoff: the param or samplesheet that connects two pipelines.
+    Select a station or a line for details.</p>
+  </header>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="main">
+    <div class="map"><svg id="map" viewBox="0 0 1000 590" role="img" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
+    <aside class="card" id="card" aria-live="polite"></aside>
+  </div>
+
+  <details id="d-st">
+    <summary>Stations</summary>
+    <div class="scroller"><table><thead><tr><th>Pipeline</th><th>Release</th><th>Takes</th><th>Gives</th></tr></thead><tbody id="t-st"></tbody></table></div>
+  </details>
+  <details id="d-e" open>
+    <summary>Handoffs</summary>
+    <div class="scroller"><table><thead><tr><th>From</th><th>To</th><th>Status</th><th>Connects through</th><th>Note</th></tr></thead><tbody id="t-e"></tbody></table></div>
+  </details>
+
+  <footer>Draft. Releases, params and samplesheet columns read from each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code) on 2026-11-12. A "native" status means both ends support the handoff in code. It does not mean the chain has been run end to end.</footer>
+</div>
+
+<script>
+const S = [
+  { id: "fetchngs", x: 150, y: 200, rel: "1.12.0", side: "left",
+    blurb: "Downloads public sequencing data and metadata from SRA, ENA, DDBJ and GEO.",
+    takes: "List of SRA/ENA/GEO/DDBJ IDs", gives: "FASTQ, metadata, a samplesheet for a named nf-core pipeline" },
+  { id: "demultiplex", x: 150, y: 320, rel: "1.7.1", side: "left",
+    blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
+    takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
+  { id: "bamtofastq", x: 150, y: 440, rel: "2.2.0", side: "left",
+    blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
+    takes: "BAM or CRAM", gives: "FASTQ" },
+  { id: "seqinspector", x: 300, y: 520, rel: "1.1.2", side: "below",
+    blurb: "QC of sequencing runs and FASTQ before analysis. Bundles: illumina, ont, fastq, bam, minimal.",
+    takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
+  { id: "igenomes", x: 150, y: 70, rel: "external", ext: true, side: "above",
+    blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. Every pipeline on this map reads it through --genome and --igenomes_base.",
+    takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
+  { id: "references", x: 330, y: 70, rel: "0.1", side: "above",
+    blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
+    takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
+  { id: "createpanelrefs", x: 540, y: 70, rel: "1.0.0", side: "left",
+    blurb: "Builds panels of normals from a cohort of normal samples.",
+    takes: "Normal BAM/CRAM cohort", gives: "Mutect2 PON, CNVkit reference, GATK gCNV models, Gens PON" },
+  { id: "annotation-cache", x: 730, y: 100, rel: "external", ext: true, side: "upleft",
+    blurb: "Public S3 bucket of VEP and snpEff caches, read by sarek with --download_cache.",
+    takes: "Caches built by downloadvepcache and downloadsnpeffcache", gives: "VEP cache, snpEff cache" },
+  { id: "downloadvepcache", x: 920, y: 50, rel: "116", side: "above",
+    blurb: "Downloads Ensembl VEP caches for the annotation-cache bucket.",
+    takes: "Species, assembly, VEP version", gives: "VEP cache (Ensembl 116)" },
+  { id: "downloadsnpeffcache", x: 920, y: 140, rel: "99", side: "below",
+    blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
+    takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
+  { id: "variantprioritization", x: 870, y: 240, rel: "1.0.0", side: "above",
+    blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
+    takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
+  { id: "variantbenchmarking", x: 870, y: 390, rel: "1.6.1", side: "below",
+    blurb: "Compares variant calls against a truth set and reports precision and recall per caller.",
+    takes: "Samplesheet: id, caller, test_vcf; --truth_vcf", gives: "Benchmark metrics and plots" },
+];
+const HUB = { id: "sarek", x: 520, y: 320, rel: "3.10.0",
+  blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
+  takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" };
+
+const E = [
+  { f: "fetchngs", t: "sarek", line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
+    note: "fetchngs writes a sarek-shaped samplesheet next to the FASTQ." },
+  { f: "demultiplex", t: "sarek", line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
+    note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
+  { f: "demultiplex", t: "seqinspector", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
+    note: "Same FASTQ, QC'd before sarek spends compute on them." },
+  { f: "bamtofastq", t: "sarek", line: "reads", st: "unchecked", via: "FASTQ, samplesheet by hand",
+    note: "No sarek samplesheet emitter checked. Sarek can also take BAM/CRAM directly with --step mapping." },
+  { f: "igenomes", t: "sarek", line: "res", st: "native", via: "--genome, --igenomes_base",
+    note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
+  { f: "references", t: "sarek", line: "res", st: "native", via: "--references, --references_datasheets_path",
+    note: "Datasheet lists prebuilt indices, so sarek skips building them." },
+  { f: "createpanelrefs", t: "sarek", line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
+    note: "Mutect2 PON and CNVkit reference plug into sarek. GATK gCNV models and Gens PON have no sarek param." },
+  { f: "createpanelrefs", t: "variantprioritization", line: "res", st: "unchecked", via: "--pon_vcf",
+    note: "Param exists; not checked that the Mutect2 PON is the expected format." },
+  { f: "downloadvepcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
+    note: "Builds the VEP side of the bucket." },
+  { f: "downloadsnpeffcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
+    note: "Builds the snpEff side of the bucket." },
+  { f: "annotation-cache", t: "sarek", line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
+    note: "Sarek pulls the matching cache for --tools vep,snpeff." },
+  { f: "annotation-cache", t: "variantprioritization", line: "res", st: "unchecked", via: "--vep_cache, --vep_cache_version",
+    note: "Param exists; not checked against the bucket layout." },
+  { f: "sarek", t: "variantprioritization", line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+    note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
+  { f: "sarek", t: "variantbenchmarking", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+    note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
+];
+
+const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked" };
+const LN = { reads: "Reads in", res: "Resources", out: "Results out" };
+const NS = "http://www.w3.org/2000/svg";
+const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
+  for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const all = [...S, HUB];
+const byId = Object.fromEntries(all.map(s => [s.id, s]));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Edges enter the hub on its nearest face, so lines fan in like a metro interchange.
+// Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
+const HEX_R = 72;
+function port(s, other) {
+  if (s !== HUB) return [s.x, s.y];
+  const dx = other.x - HUB.x, dy = other.y - HUB.y;
+  if (Math.abs(dy) > Math.abs(dx) * 0.9) {
+    const ox = Math.max(-50, Math.min(50, dx * 0.25));
+    return [HUB.x + ox, HUB.y + Math.sign(dy) * (HEX_R - Math.abs(ox) / Math.sqrt(3))];
+  }
+  return [HUB.x + Math.sign(dx) * HEX_R * Math.sqrt(3) / 2, HUB.y + Math.max(-30, Math.min(30, dy * 0.15))];
+}
+function pathFor(a, b) {
+  const [x1, y1] = port(a, b), [x2, y2] = port(b, a);
+  const vert = Math.abs(y2 - y1) > Math.abs(x2 - x1);
+  const m = vert ? (y1 + y2) / 2 : (x1 + x2) / 2;
+  return vert ? `M${x1},${y1} C${x1},${m} ${x2},${m} ${x2},${y2}` : `M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`;
+}
+
+const svg = document.getElementById("map");
+const gL = el("g"), gD = el("g"), gS = el("g");
+svg.append(gL, gD, gS);
+
+E.forEach((e, i) => {
+  e.id = "e" + i;
+  const d = pathFor(byId[e.f], byId[e.t]);
+  const p = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}`, "data-f": e.f, "data-t": e.t });
+  const hit = el("path", { d, class: "hit" });
+  hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
+  hit.addEventListener("click", () => select({ edge: e }));
+  gL.append(p, hit);
+  if (!reduced && e.st !== "unchecked") {
+    const c = el("circle", { r: 4, class: "dot" });
+    const am = el("animateMotion", { dur: `${5 + (i % 4)}s`, repeatCount: "indefinite", begin: `${-i * 0.7}s` });
+    const mp = el("mpath"); mp.setAttribute("href", "#" + e.id);
+    am.append(mp); c.append(am); gD.append(c);
+  }
+});
+
+const LBL = { upleft: [-16, -24, "end"], left: [-18, 5, "end"], right: [18, 5, "start"], above: [0, -22, "middle"], below: [0, 32, "middle"] };
+S.forEach(s => {
+  const g = el("g", { class: "stn" + (s.ext ? " external" : ""), tabindex: 0, role: "button", "data-id": s.id, "aria-label": s.id });
+  const [dx, dy, anc] = LBL[s.side];
+  g.append(el("circle", { cx: s.x, cy: s.y, r: 10 }),
+    el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
+    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, s.ext ? "resource" : s.rel || "release ?"));
+  bind(g, s); gS.append(g);
+});
+const hub = el("g", { class: "stn hub", tabindex: 0, role: "button", "data-id": "sarek", "aria-label": "sarek" });
+const hexPts = [-90, -30, 30, 90, 150, 210].map(a => { const r = a * Math.PI / 180;
+  return `${(HUB.x + HEX_R * Math.cos(r)).toFixed(1)},${(HUB.y + HEX_R * Math.sin(r)).toFixed(1)}`; }).join(" ");
+hub.append(el("polygon", { points: hexPts }),
+  el("text", { x: HUB.x, y: HUB.y + 2, "text-anchor": "middle", style: "font: 800 26px var(--display)" }, "sarek"),
+  el("text", { x: HUB.x, y: HUB.y + 22, "text-anchor": "middle", class: "ver" }, HUB.rel));
+bind(hub, HUB); gS.append(hub);
+
+function bind(g, s) {
+  g.addEventListener("click", () => select({ stn: s }));
+  g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select({ stn: s }); } });
+}
+
+const card = document.getElementById("card");
+const pill = st => `<span class="pill ${st}">${ST[st]}</span>`;
+const nfUrl = id => byId[id].ext ? null : `https://nf-co.re/${id}`;
+function link(id) { const u = id === "igenomes" ? "https://ewels.github.io/AWS-iGenomes/" : id === "annotation-cache" ? "https://annotation-cache.github.io/" : nfUrl(id);
+  return `<a href="${u}" target="_blank" rel="noopener">${u.replace("https://", "")}</a>`; }
+
+function select({ stn, edge }) {
+  svg.classList.add("focus");
+  svg.querySelectorAll(".on, .sel").forEach(n => n.classList.remove("on", "sel"));
+  if (stn) {
+    const ids = new Set([stn.id]);
+    E.filter(e => e.f === stn.id || e.t === stn.id).forEach(e => { ids.add(e.f); ids.add(e.t); document.getElementById(e.id).classList.add("on"); });
+    ids.forEach(id => svg.querySelector(`[data-id="${id}"]`).classList.add("on"));
+    svg.querySelector(`[data-id="${stn.id}"]`).classList.add("sel");
+    const ins = E.filter(e => e.t === stn.id), outs = E.filter(e => e.f === stn.id);
+    card.innerHTML = `<div class="kicker">${stn.ext ? "Resource" : "Pipeline"}${stn.rel && !stn.ext ? " · " + stn.rel : ""}</div>
+      <h2>${stn.id}</h2><p>${stn.blurb}</p>
+      <dl>${stn.takes ? `<dt>Takes</dt><dd>${stn.takes}</dd>` : ""}<dt>Gives</dt><dd>${stn.gives}</dd>
+      ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
+      ${outs.length ? `<dt>To</dt><dd>${outs.map(e => e.t).join(", ")}</dd>` : ""}
+      <dt>Link</dt><dd>${link(stn.id)}</dd></dl>`;
+  } else {
+    const p = document.getElementById(edge.id); p.classList.add("on");
+    [edge.f, edge.t].forEach(id => svg.querySelector(`[data-id="${id}"]`).classList.add("on"));
+    card.innerHTML = `<div class="kicker">Handoff · ${LN[edge.line]}</div>
+      <h2>${edge.f} → ${edge.t}</h2><div>${pill(edge.st)}</div>
+      <dl><dt>Through</dt><dd class="mono">${edge.via}</dd><dt>Note</dt><dd>${edge.note}</dd></dl>`;
+  }
+}
+function reset() {
+  svg.classList.remove("focus");
+  svg.querySelectorAll(".on, .sel").forEach(n => n.classList.remove("on", "sel"));
+  card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length} stations, ${E.length} handoffs</h2>
+    <p>${E.filter(e => e.st === "native").length} handoffs work natively, ${E.filter(e => e.st === "reshape").length} need the samplesheet edited, ${E.filter(e => e.st === "unchecked").length} are not checked yet.</p>
+    <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
+}
+svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape") reset(); });
+
+// Legend: colour is the line, dash pattern is the status.
+const sw = (cls, color) => `<svg width="38" height="10" aria-hidden="true"><line x1="5" y1="5" x2="33" y2="5" class="line ${cls}" style="stroke:${color};stroke-width:5"/></svg>`;
+document.getElementById("legend").innerHTML =
+  Object.entries(LN).map(([k, v]) => `<span>${sw("", `var(--${k})`)}${v}</span>`).join("") +
+  Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v}</span>`).join("");
+
+document.getElementById("t-st").innerHTML = [HUB, ...S].map(s =>
+  `<tr class="clickable" data-id="${s.id}"><td><strong>${s.id}</strong></td><td class="mono">${s.ext ? "resource" : s.rel || "?"}</td><td>${s.takes}</td><td>${s.gives}</td></tr>`).join("");
+document.getElementById("t-e").innerHTML = E.map(e =>
+  `<tr class="clickable" data-e="${e.id}"><td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td></tr>`).join("");
+document.querySelectorAll("tr.clickable").forEach(tr => tr.addEventListener("click", () => {
+  tr.dataset.id ? select({ stn: byId[tr.dataset.id] }) : select({ edge: E.find(e => e.id === tr.dataset.e) });
+  svg.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+}));
+
+reset();
+</script>
