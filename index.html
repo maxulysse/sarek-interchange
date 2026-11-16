@@ -25,14 +25,14 @@ h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0; letter-spac
 h2 { font: 800 18px/1.2 var(--display); margin: 0; }
 .sub { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
 code, .mono { font-family: var(--mono); font-size: 0.86em; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 14px 18px 0; font-size: 13px; color: var(--muted); align-items: center; }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .legend svg { flex: none; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
 @media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .map { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
-.map svg { display: block; width: 100%; height: auto; } .map svg:not(.narrow) { min-width: 760px; }
+.map > svg { display: block; width: 100%; height: auto; } .map > svg:not(.narrow) { min-width: 760px; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
@@ -92,10 +92,8 @@ document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-s
     <button class="theme" id="theme" type="button"></button>
   </header>
 
-  <div class="legend" id="legend"></div>
-
   <div class="main">
-    <div class="map"><svg id="map" viewBox="0 0 1000 680" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
+    <div class="map"><div class="legend" id="legend"></div><svg id="map" viewBox="0 0 1000 680" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
     <aside class="card" id="card" aria-live="polite"></aside>
   </div>
 
