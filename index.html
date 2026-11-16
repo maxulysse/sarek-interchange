@@ -13,9 +13,6 @@
   --body: "Inter", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
   --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
@@ -72,14 +69,25 @@ th, td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--
 th { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 tr.clickable { cursor: pointer; } tr.clickable:hover td, tr.clickable:focus-visible td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
 footer { color: var(--muted); font-size: 13px; }
+header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.theme { flex: none; font: 500 13px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--rule); border-radius: 99px; padding: 6px 14px; cursor: pointer; }
 </style>
+<script>
+// data-theme always holds the active theme: the stored choice, else the system setting. It is set before paint.
+let stored = null;
+try { stored = localStorage.getItem("theme"); } catch {}
+document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+</script>
 
 <div class="wrap">
   <header>
-    <h1>Sarek Interchange</h1>
-    <p class="sub">Where nf-core/sarek gets its input data and resources, and where its variants go next.
-    Each line is a handoff: the param or samplesheet that connects two pipelines.
-    Select a station or a line for details.</p>
+    <div>
+      <h1>Sarek Interchange</h1>
+      <p class="sub">Where nf-core/sarek gets its input data and resources, and where its variants go next.
+      Each line is a handoff: the param or samplesheet that connects two pipelines.
+      Select a station or a line for details.</p>
+    </div>
+    <button class="theme" id="theme" type="button"></button>
   </header>
 
   <div class="legend" id="legend"></div>
@@ -364,6 +372,24 @@ document.getElementById("t-st").append(...S.map(s =>
   row(`<td><strong>${s.id}</strong></td><td class="mono">${release(s)}</td><td>${s.takes}</td><td>${s.gives}</td>`, () => selectStation(s))));
 document.getElementById("t-e").append(...E.map(e =>
   row(`<td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td>`, () => selectEdge(e))));
+
+// Theme toggle: the choice is stored in this browser and overrides the system setting.
+const root = document.documentElement, themeBtn = document.getElementById("theme");
+const isDark = () => root.dataset.theme === "dark";
+function labelTheme() {
+  themeBtn.textContent = isDark() ? "☀ Light" : "☾ Dark";
+  themeBtn.setAttribute("aria-label", `Switch to ${isDark() ? "light" : "dark"} mode`);
+}
+themeBtn.addEventListener("click", () => {
+  root.dataset.theme = isDark() ? "light" : "dark";
+  stored = root.dataset.theme;
+  try { localStorage.setItem("theme", stored); } catch {}
+  labelTheme();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ev => {
+  if (!stored) { root.dataset.theme = ev.matches ? "dark" : "light"; labelTheme(); }
+});
+labelTheme();
 
 reset();
 </script>
