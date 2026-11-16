@@ -5,7 +5,7 @@
 <title>Sarek Interchange</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: metro map of sarek as the interchange; lines = reads in, resources down, results out; detail card beside the map */
+/* Layout: metro map of sarek as the interchange; lines = input data in, resources down, results out; detail card beside the map */
 :root {
   --bg: #f5f7f6; --surface: #ffffff; --fg: #17201c; --muted: #5b6862; --rule: #d7dfdb;
   --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --hub: #1d8a4e; --hub-fg: #ffffff;
@@ -76,7 +76,7 @@ footer { color: var(--muted); font-size: 13px; }
 <div class="wrap">
   <header>
     <h1>Sarek Interchange</h1>
-    <p class="sub">Where nf-core/sarek gets its reads and resources, and where its variants go next.
+    <p class="sub">Where nf-core/sarek gets its input data and resources, and where its variants go next.
     Each line is a handoff: the param or samplesheet that connects two pipelines.
     Select a station or a line for details.</p>
   </header>
@@ -171,7 +171,7 @@ const E = [
 ];
 
 const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked", planned: "Planned" };
-const LN = { reads: "Reads in", res: "Resources", out: "Results out" };
+const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
