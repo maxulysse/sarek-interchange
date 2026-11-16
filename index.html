@@ -39,7 +39,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
-.line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; }
+.line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; } .line.planned { stroke-opacity: .35; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
 .stn circle { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transition: r .15s; }
@@ -60,7 +60,7 @@ svg.focus .on { opacity: 1 !important; }
 .card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .pill { display: inline-block; font: 600 11px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1.5px solid currentColor; }
-.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.unchecked { color: var(--muted); }
+.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.unchecked { color: var(--muted); } .pill.planned { color: var(--res); }
 .card a { color: var(--res); }
 .card p { margin: 0; }
 
@@ -119,7 +119,7 @@ const S = [
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
   { id: "references", x: 350, y: 80, rel: "0.1", side: "above",
-    blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read. Sarek 3.12.0 has no param to read it yet.",
+    blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
   { id: "createpanelrefs", x: 508, y: 80, rel: "1.1.0", side: "above",
     blurb: "Builds panels of normals from a cohort of normal samples.",
@@ -155,6 +155,8 @@ const E = [
     note: "No sarek samplesheet emitter checked. Sarek can also take BAM/CRAM directly with --step mapping." },
   { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
+  { f: "references", t: "sarek", hp: ["t", -40], line: "res", st: "planned", via: "--references, --references_datasheets_path",
+    note: "Not in sarek 3.12.0. Added by nf-core/sarek#2307, still open." },
   { f: "createpanelrefs", t: "sarek", hp: ["t", -12], line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
     note: "Mutect2 PON and CNVkit reference plug into sarek. GATK gCNV models and Gens PON have no sarek param." },
   { f: "createpanelrefs", t: "variantprioritization", line: "res", st: "unchecked", via: "--pon_vcf",
@@ -173,7 +175,7 @@ const E = [
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
 ];
 
-const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked" };
+const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked", planned: "Planned" };
 const LN = { reads: "Reads in", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
@@ -240,7 +242,7 @@ E.forEach((e, i) => {
   hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
   hit.addEventListener("click", () => selectEdge(e));
   gL.append(e.node, hit);
-  if (!reduced && e.st !== "unchecked") {
+  if (!reduced && (e.st === "native" || e.st === "reshape")) {
     const c = el("circle", { r: 4, class: "dot" });
     const am = el("animateMotion", { dur: `${5 + (i % 4)}s`, repeatCount: "indefinite", begin: `${-i * 0.7}s` });
     const mp = el("mpath"); mp.setAttribute("href", "#" + e.id);
@@ -301,7 +303,7 @@ function selectEdge(e) {
 function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length} stations around sarek, ${E.length} handoffs</h2>
-    <p>${E.filter(e => e.st === "native").length} handoffs work natively, ${E.filter(e => e.st === "reshape").length} need the samplesheet edited, ${E.filter(e => e.st === "unchecked").length} are not checked yet.</p>
+    <p>${E.filter(e => e.st === "native").length} handoffs work natively, ${E.filter(e => e.st === "reshape").length} need the samplesheet edited, ${E.filter(e => e.st === "unchecked").length} are not checked yet, ${E.filter(e => e.st === "planned").length} is planned.</p>
     <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
