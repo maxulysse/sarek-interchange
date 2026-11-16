@@ -150,6 +150,8 @@ const E = [
     note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
   { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
     note: "Same FASTQ, QC'd before sarek spends compute on them." },
+  { f: "seqinspector", t: "sarek", hp: ["b", -40], line: "reads", st: "planned", via: "--continue_with_lint_fail false, then sarek on success",
+    note: "1.1.2 gates the whole run only: a lint failure stops it, CheckQC never does. A per-sample gate needs seqinspector to write a sarek sheet of samples that pass." },
   { f: "bamtofastq", t: "sarek", hp: ["l", 8], sp: -6, line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
     note: "Writes FASTQ only. Build the sarek sheet by hand: one row per pair, lane set by you. Sarek can also take BAM/CRAM directly with --step mapping." },
   { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
@@ -182,7 +184,7 @@ const byId = Object.fromEntries(all.map(s => [s.id, s]));
 const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
+// Edges enter the hub on a named face ("l", "r", "t" or "b") at a fixed offset, so parallel lines
 // arrive side by side like tracks into an interchange.
 // "sp" shifts an edge's station end vertically, so paired tracks sit either side of the station centre.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
@@ -190,7 +192,7 @@ const HEX_R = 72;
 function port(s, e) {
   if (s !== HUB) return [s.x, s.y + (e.sp ?? 0)];
   const [face, off] = e.hp;
-  if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
+  if (face === "t" || face === "b") return [HUB.x + off, HUB.y + (face === "b" ? 1 : -1) * (HEX_R - Math.abs(off) / Math.sqrt(3))];
   return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
 }
 // Octilinear routing, like a subway map: straight runs joined by one 45-degree diagonal,
