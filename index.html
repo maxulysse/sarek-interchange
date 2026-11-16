@@ -108,7 +108,7 @@ const S = [
   { id: "demultiplex", x: 140, y: 440, rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 140, y: 330, rel: "2.2.1", side: "left",
+  { id: "bamtofastq", x: 140, y: 334, rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
   { id: "seqinspector", x: 350, y: 530, rel: "1.1.2", side: "below",
@@ -150,7 +150,7 @@ const E = [
     note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
   { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
     note: "Same FASTQ, QC'd before sarek spends compute on them." },
-  { f: "bamtofastq", t: "sarek", hp: ["l", 8], line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
+  { f: "bamtofastq", t: "sarek", hp: ["l", 8], sp: -6, line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
     note: "Writes FASTQ only. Build the sarek sheet by hand: one row per pair, lane set by you. Sarek can also take BAM/CRAM directly with --step mapping." },
   { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
@@ -168,7 +168,7 @@ const E = [
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
   { f: "sarek", t: "variantbenchmarking", hp: ["r", 8], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
-  { f: "sarek", t: "bamtofastq", hp: ["l", 20], bend: "end", line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
+  { f: "sarek", t: "bamtofastq", hp: ["l", 20], sp: 6, line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
@@ -184,10 +184,11 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
 // arrive side by side like tracks into an interchange.
+// "sp" shifts an edge's station end vertically, so paired tracks sit either side of the station centre.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
 const HEX_R = 72;
 function port(s, e) {
-  if (s !== HUB) return [s.x, s.y];
+  if (s !== HUB) return [s.x, s.y + (e.sp ?? 0)];
   const [face, off] = e.hp;
   if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
   return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
@@ -202,8 +203,8 @@ function pathFor(e) {
   let pts;
   if (ax < 1 || ay < 1) pts = [[x1, y1], [x2, y2]];
   else {
-    // Where the diagonal sits: "start" bends right away, "end" bends last, default in the middle.
-    const k = e.bend === "start" ? 0 : e.bend === "end" ? 1 : 0.5;
+    // Where the diagonal sits: "start" bends right away, default in the middle.
+    const k = e.bend === "start" ? 0 : 0.5;
     if (ax >= ay) { const r1 = (ax - ay) * k, r2 = (ax - ay) - r1;
       pts = [[x1, y1], [x1 + sx * r1, y1], [x2 - sx * r2, y2], [x2, y2]]; }
     else { const r1 = (ay - ax) * k, r2 = (ay - ax) - r1;
