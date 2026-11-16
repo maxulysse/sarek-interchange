@@ -39,7 +39,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
-.line.reshape { stroke-dasharray: 14 9; } .line.planned { stroke-opacity: .35; }
+.line.planned { stroke-opacity: .35; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
 .stn.optional .mark { stroke-dasharray: 5 4; }
@@ -60,7 +60,7 @@ svg.focus .on { opacity: 1 !important; }
 .card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .pill { display: inline-block; font: 600 11px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1.5px solid currentColor; }
-.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.planned { color: var(--res); }
+.pill.native { color: var(--reads); } .pill.planned { color: var(--res); }
 .card a { color: var(--res); }
 .card p { margin: 0; }
 
@@ -153,13 +153,13 @@ const S = [
     takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
 const E = [
-  { f: "fetchngs", t: "seqinspector", line: "reads", st: "reshape", via: "samplesheet/samplesheet.csv, then --input",
+  { f: "fetchngs", t: "seqinspector", line: "reads", st: "planned", via: "samplesheet/samplesheet.csv, then --input",
     note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
   { f: "demultiplex", t: "seqinspector", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
     note: "demultiplex writes this sheet and a sarek one for the same FASTQ." },
   { f: "seqinspector", t: "sarek", line: "reads", st: "planned", via: "--continue_with_lint_fail false, then sarek on success",
     note: "Optional: skip seqinspector and pass the sarek sheet straight on. fetchngs writes one with --nf_core_pipeline sarek; demultiplex leaves patient empty. As a gate, 1.1.2 only stops the whole run on a lint failure, and CheckQC never stops it. A per-sample gate needs seqinspector to write a sarek sheet of samples that pass." },
-  { f: "bamtofastq", t: "sarek", line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
+  { f: "bamtofastq", t: "sarek", line: "reads", st: "planned", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
     note: "Writes FASTQ only. Build the sarek sheet by hand: one row per pair, lane set by you. Sarek can also take BAM/CRAM directly with --step mapping." },
   { f: "igenomes", t: "sarek", line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
@@ -173,23 +173,23 @@ const E = [
     note: "Builds the snpEff side of the bucket." },
   { f: "annotation-cache", t: "sarek", line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
     note: "Sarek pulls the matching cache for --tools vep,snpeff." },
-  { f: "sarek", t: "variantprioritization", line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+  { f: "sarek", t: "variantprioritization", line: "out", st: "planned", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
-  { f: "sarek", t: "variantbenchmarking", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+  { f: "sarek", t: "variantbenchmarking", line: "out", st: "planned", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
-  { f: "sarek", t: "tumourevo", line: "out", st: "reshape", via: "variant_calling/{mutect2,strelka,sentieon_tnscope} VCF and ascat/*.{segments,purityploidy}.txt into dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller",
+  { f: "sarek", t: "tumourevo", line: "out", st: "planned", via: "variant_calling/{mutect2,strelka,sentieon_tnscope} VCF and ascat/*.{segments,purityploidy}.txt into dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller",
     note: "tumourevo takes Mutect2, Strelka or TNscope calls and ASCAT copy numbers, so set cna_caller to ASCAT. Sarek writes no sheet for it." },
-  { f: "sarek", t: "epitopeprediction", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into sample, alleles, mhc_class, filename, germline_vcf, tumor_sample",
+  { f: "sarek", t: "epitopeprediction", line: "out", st: "planned", via: "variant_calling/*/*.vcf.gz into sample, alleles, mhc_class, filename, germline_vcf, tumor_sample",
     note: "Give the raw somatic VCF, not the annotated one: epitopeprediction runs VEP itself. Set tumor_sample for multi-sample VCFs (Strelka: TUMOR) and germline_vcf to the normal's germline calls." },
-  { f: "sarek", t: "hlatyping", line: "out", st: "reshape", via: "--save_output_as_bam, then the preprocessing BAM into sample, bam, seq_type",
+  { f: "sarek", t: "hlatyping", line: "out", st: "planned", via: "--save_output_as_bam, then the preprocessing BAM into sample, bam, seq_type",
     note: "hlatyping takes BAM, not CRAM. It extracts the reads again and maps them to the HLA region." },
-  { f: "hlatyping", t: "epitopeprediction", line: "out", st: "reshape", via: "results/*/*_result.tsv into alleles",
+  { f: "hlatyping", t: "epitopeprediction", line: "out", st: "planned", via: "results/*/*_result.tsv into alleles",
     note: "Join the OptiType alleles into one string (A*01:01;B*07:02;...) or a .txt file with one allele per line. HLA-HD, for class II, ships without its licence." },
-  { f: "sarek", t: "bamtofastq", line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
+  { f: "sarek", t: "bamtofastq", line: "out", st: "planned", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
-const ST = { native: "Native", reshape: "Needs reshaping", planned: "Planned" };
+const ST = { native: "Native", planned: "Planned" };
 const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
@@ -340,7 +340,7 @@ function reset() {
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape") reset(); });
 
-// Legend: colour is the line, dash pattern is the status.
+// Legend: colour is the line, opacity is the status.
 const sw = (cls, color) => `<svg width="38" height="10" aria-hidden="true"><line x1="5" y1="5" x2="33" y2="5" class="line ${cls}" style="stroke:${color};stroke-width:5"/></svg>`;
 document.getElementById("legend").innerHTML =
   Object.entries(LN).map(([k, v]) => `<span>${sw("", `var(--${k})`)}${v}</span>`).join("") +
