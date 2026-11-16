@@ -51,7 +51,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn:focus-visible { outline: none; } .stn:focus-visible .mark { stroke: var(--res); }
 .hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
 .hub .ver { fill: var(--hub-fg); opacity: .7; } .hub .name { font: 800 26px var(--display); }
-.dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; }
+.dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; } .dot.planned { opacity: .5; }
 svg.focus .line, svg.focus .stn, svg.focus .dot { opacity: .18; }
 svg.focus .on { opacity: 1 !important; }
 
@@ -189,8 +189,7 @@ const E = [
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
-// "live" statuses work today and get a moving dot.
-const ST = { native: { label: "Native", live: true }, reshape: { label: "Needs reshaping", live: true }, planned: { label: "Planned", live: false } };
+const ST = { native: "Native", reshape: "Needs reshaping", planned: "Planned" };
 const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
@@ -266,11 +265,11 @@ E.forEach((e, i) => {
   const d = pathFor(e);
   e.node = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}` });
   const hit = el("path", { d, class: "hit" });
-  hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st].label}`));
+  hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
   hit.addEventListener("click", () => selectEdge(e));
   gL.append(e.node, hit);
-  if (!reduced && ST[e.st].live) {
-    const c = el("circle", { r: 4, class: "dot" });
+  if (!reduced) {
+    const c = el("circle", { r: 4, class: `dot ${e.st}` });
     const am = el("animateMotion", { dur: `${5 + (i % 4)}s`, repeatCount: "indefinite", begin: `${-i * 0.7}s` });
     const mp = el("mpath"); mp.setAttribute("href", "#" + e.id);
     am.append(mp); c.append(am); gD.append(c);
@@ -299,7 +298,7 @@ function activate(node, fn) {
 }
 
 const card = document.getElementById("card");
-const pill = st => `<span class="pill ${st}">${ST[st].label}</span>`;
+const pill = st => `<span class="pill ${st}">${ST[st]}</span>`;
 function link(s) { const u = s.url ?? `https://nf-co.re/${s.id}`;
   return `<a href="${u}" target="_blank" rel="noopener">${u.replace("https://", "")}</a>`; }
 
@@ -328,7 +327,7 @@ function selectEdge(e) {
 function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length - 1} stations around sarek, ${E.length} handoffs</h2>
-    <p>${Object.entries(ST).map(([k, v]) => `${v.label}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
+    <p>${Object.entries(ST).map(([k, v]) => `${v}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
     <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
@@ -338,7 +337,7 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape") reset(); }
 const sw = (cls, color) => `<svg width="38" height="10" aria-hidden="true"><line x1="5" y1="5" x2="33" y2="5" class="line ${cls}" style="stroke:${color};stroke-width:5"/></svg>`;
 document.getElementById("legend").innerHTML =
   Object.entries(LN).map(([k, v]) => `<span>${sw("", `var(--${k})`)}${v}</span>`).join("") +
-  Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v.label}</span>`).join("");
+  Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v}</span>`).join("");
 
 function row(cells, open) {
   const tr = document.createElement("tr");
