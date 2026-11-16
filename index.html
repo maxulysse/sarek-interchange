@@ -3,23 +3,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sarek Interchange</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: metro map of sarek as the interchange; lines = reads in, resources down, results out; detail card beside the map */
+/* Layout: metro map of sarek as the interchange; lines = input data in, resources down, results out; detail card beside the map */
 :root {
   --bg: #f5f7f6; --surface: #ffffff; --fg: #17201c; --muted: #5b6862; --rule: #d7dfdb;
-  --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --ext: #7a8781; --hub: #1d8a4e; --hub-fg: #ffffff;
+  --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --hub: #1d8a4e; --hub-fg: #ffffff;
   --display: "Overpass", "Inter", system-ui, sans-serif;
   --body: "Inter", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
 
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
@@ -40,21 +39,20 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
-.line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; }
+.line.reshape { stroke-dasharray: 14 9; } .line.planned { stroke-opacity: .35; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
-.stn circle { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transition: r .15s; }
-.stn.external circle { stroke: var(--ext); stroke-dasharray: 4 3; }
-.stn text, .elabel { fill: var(--fg); font: 600 15px var(--display); }
+.stn.optional .mark { stroke-dasharray: 5 4; }
+.mark { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transform-box: fill-box; transform-origin: center; transition: transform .15s; }
+.stn text { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
 .stn:not(.hub) text { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
-.stn:hover circle, .stn:focus-visible circle, .stn.sel circle { r: 13; }
-.stn:focus-visible { outline: none; } .stn:focus-visible circle { stroke: var(--res); }
+.stn:hover .mark, .stn:focus-visible .mark, .stn.sel .mark { transform: scale(1.3); }
+.stn:focus-visible { outline: none; } .stn:focus-visible .mark { stroke: var(--res); }
 .hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
-.hub .ver { fill: var(--hub-fg); opacity: .7; }
-.elabel { font: 400 10.5px var(--mono); fill: var(--muted); pointer-events: none; }
-.dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; }
-svg.focus .line, svg.focus .stn, svg.focus .elabel { opacity: .18; }
+.hub .ver { fill: var(--hub-fg); opacity: .7; } .hub .name { font: 800 26px var(--display); }
+.dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; } .dot.planned { opacity: .5; }
+svg.focus .line, svg.focus .stn, svg.focus .dot { opacity: .18; }
 svg.focus .on { opacity: 1 !important; }
 
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
@@ -62,7 +60,7 @@ svg.focus .on { opacity: 1 !important; }
 .card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .pill { display: inline-block; font: 600 11px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1.5px solid currentColor; }
-.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.unchecked { color: var(--muted); }
+.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.planned { color: var(--res); }
 .card a { color: var(--res); }
 .card p { margin: 0; }
 
@@ -72,14 +70,14 @@ summary { padding: 14px 18px; cursor: pointer; font: 800 16px var(--display); }
 table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
 th, td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--rule); vertical-align: top; }
 th { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-tr.clickable { cursor: pointer; } tr.clickable:hover td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
+tr.clickable { cursor: pointer; } tr.clickable:hover td, tr.clickable:focus-visible td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
 footer { color: var(--muted); font-size: 13px; }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Sarek Interchange</h1>
-    <p class="sub">Where nf-core/sarek gets its reads and resources, and where its variants go next.
+    <p class="sub">Where nf-core/sarek gets its input data and resources, and where its variants go next.
     Each line is a handoff: the param or samplesheet that connects two pipelines.
     Select a station or a line for details.</p>
   </header>
@@ -87,7 +85,7 @@ footer { color: var(--muted); font-size: 13px; }
   <div class="legend" id="legend"></div>
 
   <div class="main">
-    <div class="map"><svg id="map" viewBox="0 0 1000 590" role="img" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
+    <div class="map"><svg id="map" viewBox="0 0 1000 680" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
     <aside class="card" id="card" aria-live="polite"></aside>
   </div>
 
@@ -100,101 +98,132 @@ footer { color: var(--muted); font-size: 13px; }
     <div class="scroller"><table><thead><tr><th>From</th><th>To</th><th>Status</th><th>Connects through</th><th>Note</th></tr></thead><tbody id="t-e"></tbody></table></div>
   </details>
 
-  <footer>Draft. Releases, params and samplesheet columns read from each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code) on 2026-11-12. A "native" status means both ends support the handoff in code. It does not mean the chain has been run end to end.</footer>
+  <footer>Draft. Releases, params and samplesheet columns read from each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code) on 2026-11-16. Unreleased versions are marked planned in their card. A "native" status means both ends support the handoff in code. It does not mean the chain has been run end to end.</footer>
 </div>
 
 <script>
 const S = [
-  { id: "fetchngs", x: 140, y: 200, rel: "1.12.0", side: "left",
+  { id: "sarek", x: 520, y: 320, rel: "3.12.0", hub: true, side: "inside",
+  blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
+  takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" },
+  { id: "fetchngs", x: 140, y: 224, rel: "1.13.0", side: "left",
     blurb: "Downloads public sequencing data and metadata from SRA, ENA, DDBJ and GEO.",
     takes: "List of SRA/ENA/GEO/DDBJ IDs", gives: "FASTQ, metadata, a samplesheet for a named nf-core pipeline" },
-  { id: "demultiplex", x: 140, y: 440, rel: "1.7.1", side: "left",
+  { id: "demultiplex", x: 140, y: 398, rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 140, y: 330, rel: "2.2.0", side: "left",
+  { id: "bamtofastq", x: 140, y: 600, rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
-  { id: "seqinspector", x: 350, y: 530, rel: "1.1.2", side: "below",
-    blurb: "QC of sequencing runs and FASTQ before analysis. Bundles: illumina, ont, fastq, bam, minimal.",
+  { id: "seqinspector", x: 320, y: 311, rel: "1.1.2", tag: "optional", side: "below",
+    blurb: "Optional QC stop before sarek: QC of sequencing runs and FASTQ. Bundles: illumina, ont, fastq, bam, minimal.",
     takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
-  { id: "igenomes", x: 140, y: 80, rel: "external", ext: true, side: "above",
-    blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. Every pipeline on this map reads it through --genome and --igenomes_base.",
+  { id: "igenomes", x: 140, y: 80, ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
+    blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 350, y: 80, rel: "0.1", side: "above",
+  { id: "references", x: 400, y: 80, rel: "1.1.0", tag: "planned", side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
-  { id: "createpanelrefs", x: 508, y: 80, rel: "1.0.0", side: "above",
+  { id: "createpanelrefs", x: 640, y: 80, rel: "1.1.0", side: "above",
     blurb: "Builds panels of normals from a cohort of normal samples.",
     takes: "Normal BAM/CRAM cohort", gives: "Mutect2 PON, CNVkit reference, GATK gCNV models, Gens PON" },
-  { id: "annotation-cache", x: 770, y: 160, rel: "external", ext: true, side: "below",
+  { id: "annotation-cache", x: 770, y: 138, ext: true, url: "https://annotation-cache.github.io/", side: "below",
     blurb: "Public S3 bucket of VEP and snpEff caches, read by sarek with --download_cache.",
     takes: "Caches built by downloadvepcache and downloadsnpeffcache", gives: "VEP cache, snpEff cache" },
-  { id: "downloadvepcache", x: 920, y: 80, rel: "116", side: "above",
+  { id: "downloadvepcache", x: 920, y: 80, rel: "116", side: "above", url: "https://github.com/annotation-cache/downloadvepcache",
     blurb: "Downloads Ensembl VEP caches for the annotation-cache bucket.",
     takes: "Species, assembly, VEP version", gives: "VEP cache (Ensembl 116)" },
-  { id: "downloadsnpeffcache", x: 920, y: 240, rel: "99", side: "below",
+  { id: "downloadsnpeffcache", x: 920, y: 196, rel: "99", side: "below", url: "https://github.com/annotation-cache/downloadsnpeffcache",
     blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
     takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
-  { id: "variantprioritization", x: 640, y: 110, rel: "1.0.0", side: "above",
+  { id: "variantprioritization", x: 920, y: 455, rel: "1.0.0", side: "below",
     blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
     takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
-  { id: "variantbenchmarking", x: 880, y: 400, rel: "1.6.1", side: "below",
+  { id: "variantbenchmarking", x: 920, y: 311, rel: "1.6.1", side: "below",
     blurb: "Compares variant calls against a truth set and reports precision and recall per caller.",
     takes: "Samplesheet: id, caller, test_vcf; --truth_vcf", gives: "Benchmark metrics and plots" },
+  { id: "tumourevo", x: 920, y: 600, rel: "1.0.0", side: "below",
+    blurb: "Reconstructs tumour evolution: subclonal deconvolution, driver annotation and mutational signatures, for one or many samples per patient.",
+    takes: "Samplesheet: dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller, cancer_type", gives: "Subclonal clusters, drivers, signatures" },
+  { id: "epitopeprediction", x: 640, y: 600, rel: "3.2.0", side: "below",
+    blurb: "Predicts which mutated peptides bind the patient's HLA alleles, for MHC class I or II.",
+    takes: "Samplesheet: sample, alleles, mhc_class, filename (raw somatic VCF), germline_vcf, tumor_sample", gives: "Ranked neoepitope predictions" },
+  { id: "hlatyping", x: 400, y: 600, rel: "2.2.0", side: "below",
+    blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
+    takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
-const HUB = { id: "sarek", x: 520, y: 320, rel: "3.10.0",
-  blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
-  takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" };
-
 const E = [
-  { f: "fetchngs", t: "sarek", hp: ["l", -10], line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
-    note: "fetchngs writes a sarek-shaped samplesheet next to the FASTQ." },
-  { f: "demultiplex", t: "sarek", hp: ["l", 30], line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
-    note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
-  { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
-    note: "Same FASTQ, QC'd before sarek spends compute on them." },
-  { f: "bamtofastq", t: "sarek", hp: ["l", 10], line: "reads", st: "unchecked", via: "FASTQ, samplesheet by hand",
-    note: "No sarek samplesheet emitter checked. Sarek can also take BAM/CRAM directly with --step mapping." },
-  { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
+  { f: "fetchngs", t: "seqinspector", line: "reads", st: "reshape", via: "samplesheet/samplesheet.csv, then --input",
+    note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
+  { f: "demultiplex", t: "seqinspector", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
+    note: "demultiplex writes this sheet and a sarek one for the same FASTQ." },
+  { f: "seqinspector", t: "sarek", line: "reads", st: "planned", via: "--continue_with_lint_fail false, then sarek on success",
+    note: "Optional: skip seqinspector and pass the sarek sheet straight on. fetchngs writes one with --nf_core_pipeline sarek; demultiplex leaves patient empty. As a gate, 1.1.2 only stops the whole run on a lint failure, and CheckQC never stops it. A per-sample gate needs seqinspector to write a sarek sheet of samples that pass." },
+  { f: "bamtofastq", t: "sarek", line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
+    note: "Writes FASTQ only. Build the sarek sheet by hand: one row per pair, lane set by you. Sarek can also take BAM/CRAM directly with --step mapping." },
+  { f: "igenomes", t: "sarek", line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
-  { f: "references", t: "sarek", hp: ["t", -40], line: "res", st: "native", via: "--references, --references_datasheets_path",
-    note: "Datasheet lists prebuilt indices, so sarek skips building them." },
-  { f: "createpanelrefs", t: "sarek", hp: ["t", -12], line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
+  { f: "references", t: "sarek", line: "res", st: "planned", via: "--references, --references_datasheets_path",
+    note: "Not in sarek 3.12.0. Added by nf-core/sarek#2307, still open." },
+  { f: "createpanelrefs", t: "sarek", line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
     note: "Mutect2 PON and CNVkit reference plug into sarek. GATK gCNV models and Gens PON have no sarek param." },
-  { f: "createpanelrefs", t: "variantprioritization", line: "res", st: "unchecked", via: "--pon_vcf",
-    note: "Param exists; not checked that the Mutect2 PON is the expected format." },
   { f: "downloadvepcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
     note: "Builds the VEP side of the bucket." },
   { f: "downloadsnpeffcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
     note: "Builds the snpEff side of the bucket." },
-  { f: "annotation-cache", t: "sarek", hp: ["r", -30], line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
+  { f: "annotation-cache", t: "sarek", line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
     note: "Sarek pulls the matching cache for --tools vep,snpeff." },
-  { f: "annotation-cache", t: "variantprioritization", line: "res", st: "unchecked", via: "--vep_cache, --vep_cache_version",
-    note: "Param exists; not checked against the bucket layout." },
-  { f: "sarek", t: "variantprioritization", hp: ["t", 12], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+  { f: "sarek", t: "variantprioritization", line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
-  { f: "sarek", t: "variantbenchmarking", hp: ["r", 20], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+  { f: "sarek", t: "variantbenchmarking", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
+  { f: "sarek", t: "tumourevo", line: "out", st: "reshape", via: "variant_calling/{mutect2,strelka,sentieon_tnscope} VCF and ascat/*.{segments,purityploidy}.txt into dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller",
+    note: "tumourevo takes Mutect2, Strelka or TNscope calls and ASCAT copy numbers, so set cna_caller to ASCAT. Sarek writes no sheet for it." },
+  { f: "sarek", t: "epitopeprediction", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into sample, alleles, mhc_class, filename, germline_vcf, tumor_sample",
+    note: "Give the raw somatic VCF, not the annotated one: epitopeprediction runs VEP itself. Set tumor_sample for multi-sample VCFs (Strelka: TUMOR) and germline_vcf to the normal's germline calls." },
+  { f: "sarek", t: "hlatyping", line: "out", st: "reshape", via: "--save_output_as_bam, then the preprocessing BAM into sample, bam, seq_type",
+    note: "hlatyping takes BAM, not CRAM. It extracts the reads again and maps them to the HLA region." },
+  { f: "hlatyping", t: "epitopeprediction", line: "out", st: "reshape", via: "results/*/*_result.tsv into alleles",
+    note: "Join the OptiType alleles into one string (A*01:01;B*07:02;...) or a .txt file with one allele per line. HLA-HD, for class II, ships without its licence." },
+  { f: "sarek", t: "bamtofastq", line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
+    note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
-const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked" };
-const LN = { reads: "Reads in", res: "Resources", out: "Results out" };
+const ST = { native: "Native", reshape: "Needs reshaping", planned: "Planned" };
+const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
-const all = [...S, HUB];
-const byId = Object.fromEntries(all.map(s => [s.id, s]));
+const byId = Object.fromEntries(S.map(s => [s.id, s]));
+const HUB = S.find(s => s.hub);
+const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
-// arrive side by side like tracks into an interchange.
+// Hub edges meet the hexagon face ("l", "r", "t" or "b") that points at their far station. Each face
+// splits its length into equal slots, one per edge, ordered by where their far station sits, so lines
+// spread evenly and never cross at the hub.
+// Edges joining the same two stations spread the same way at the far end, so they run parallel.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
 const HEX_R = 72;
+const across = face => face === "l" || face === "r" ? "y" : "x";
+const far = e => byId[e.f === HUB.id ? e.t : e.f];
+const hubEdges = E.filter(e => e.f === HUB.id || e.t === HUB.id);
+hubEdges.forEach(e => { const s = far(e), dx = s.x - HUB.x, dy = s.y - HUB.y;
+  e.face = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "r" : "l") : (dy > 0 ? "b" : "t"); });
+E.forEach(e => e.shift = [0, 0]);
+Object.values(Object.groupBy(hubEdges, e => e.face)).forEach(es => {
+  es.sort((a, b) => far(a)[across(a.face)] - far(b)[across(b.face)]);
+  const len = across(es[0].face) === "y" ? HEX_R : HEX_R * Math.sqrt(3);
+  es.forEach((e, i) => e.off = ((i + 0.5) / es.length - 0.5) * len);
+});
+Object.values(Object.groupBy(hubEdges, e => [e.f, e.t].sort().join())).forEach(es => {
+  const mid = es.reduce((sum, e) => sum + e.off, 0) / es.length;
+  es.forEach(e => { const d = e.off - mid; e.shift = across(e.face) === "y" ? [0, d] : [d, 0]; });
+});
 function port(s, e) {
-  if (s !== HUB) return [s.x, s.y];
-  const [face, off] = e.hp;
-  if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
-  return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
+  if (!s.hub) return [s.x + e.shift[0], s.y + e.shift[1]];
+  if (e.face === "t" || e.face === "b") return [s.x + e.off, s.y + (e.face === "b" ? 1 : -1) * (HEX_R - Math.abs(e.off) / Math.sqrt(3))];
+  return [s.x + (e.face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, s.y + e.off];
 }
 // Octilinear routing, like a subway map: straight runs joined by one 45-degree diagonal,
 // with rounded corners at each bend. Leaves the station along its main axis.
@@ -206,12 +235,11 @@ function pathFor(e) {
   let pts;
   if (ax < 1 || ay < 1) pts = [[x1, y1], [x2, y2]];
   else {
-    // Where the diagonal sits: "start" bends right away, "end" bends last, default in the middle.
-    const k = e.bend === "start" ? 0 : e.bend === "end" ? 1 : 0.5;
-    if (ax >= ay) { const r1 = (ax - ay) * k, r2 = (ax - ay) - r1;
-      pts = [[x1, y1], [x1 + sx * r1, y1], [x2 - sx * r2, y2], [x2, y2]]; }
-    else { const r1 = (ay - ax) * k, r2 = (ay - ax) - r1;
-      pts = [[x1, y1], [x1, y1 + sy * r1], [x2, y2 - sy * r2], [x2, y2]]; }
+    // The diagonal sits in the middle, with equal straight runs either side.
+    if (ax >= ay) { const r = (ax - ay) / 2;
+      pts = [[x1, y1], [x1 + sx * r, y1], [x2 - sx * r, y2], [x2, y2]]; }
+    else { const r = (ay - ax) / 2;
+      pts = [[x1, y1], [x1, y1 + sy * r], [x2, y2 - sy * r], [x2, y2]]; }
     pts = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.5);
   }
   return rounded(pts);
@@ -235,78 +263,77 @@ const svg = document.getElementById("map");
 const gL = el("g"), gD = el("g"), gS = el("g");
 svg.append(gL, gD, gS);
 
+// Each station and edge keeps its own SVG node, so selection needs no DOM lookups.
 E.forEach((e, i) => {
   e.id = "e" + i;
   const d = pathFor(e);
-  const p = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}`, "data-f": e.f, "data-t": e.t });
+  e.node = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}` });
   const hit = el("path", { d, class: "hit" });
   hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
-  hit.addEventListener("click", () => select({ edge: e }));
-  gL.append(p, hit);
-  if (!reduced && e.st !== "unchecked") {
-    const c = el("circle", { r: 4, class: "dot" });
-    const am = el("animateMotion", { dur: `${5 + (i % 4)}s`, repeatCount: "indefinite", begin: `${-i * 0.7}s` });
+  hit.addEventListener("click", () => selectEdge(e));
+  gL.append(e.node, hit);
+  if (!reduced) {
+    const c = el("circle", { r: 4, class: `dot ${e.st}` });
+    // Balls flowing into the same station share one timing, so they leave and arrive together.
+    const k = S.indexOf(byId[e.t]);
+    const am = el("animateMotion", { dur: `${5 + (k % 4)}s`, repeatCount: "indefinite", begin: `${-k * 0.7}s` });
     const mp = el("mpath"); mp.setAttribute("href", "#" + e.id);
     am.append(mp); c.append(am); gD.append(c);
   }
 });
 
-const LBL = { upleft: [-16, -24, "end"], left: [-18, 5, "end"], right: [18, 5, "start"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
+const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"], inside: [0, 0, "middle"] };
+const hexPts = s => [-90, -30, 30, 90, 150, 210].map(a => { const r = a * Math.PI / 180;
+  return `${(s.x + HEX_R * Math.cos(r)).toFixed(1)},${(s.y + HEX_R * Math.sin(r)).toFixed(1)}`; }).join(" ");
+const mark = s => s.hub ? el("polygon", { points: hexPts(s) })
+  : s.ext ? el("rect", { x: s.x - 9, y: s.y - 9, width: 18, height: 18, class: "mark" })
+  : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" });
 S.forEach(s => {
-  const g = el("g", { class: "stn" + (s.ext ? " external" : ""), tabindex: 0, role: "button", "data-id": s.id, "aria-label": s.id });
+  s.node = el("g", { class: ["stn", s.hub && "hub", s.tag].filter(Boolean).join(" "), role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
-  g.append(el("circle", { cx: s.x, cy: s.y, r: 10 }),
-    el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
-    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, s.ext ? "resource" : s.rel || "release ?"));
-  bind(g, s); gS.append(g);
+  s.node.append(mark(s),
+    el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc, class: "name" }, s.id),
+    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
+  activate(s.node, () => selectStation(s)); gS.append(s.node);
 });
-const hub = el("g", { class: "stn hub", tabindex: 0, role: "button", "data-id": "sarek", "aria-label": "sarek" });
-const hexPts = [-90, -30, 30, 90, 150, 210].map(a => { const r = a * Math.PI / 180;
-  return `${(HUB.x + HEX_R * Math.cos(r)).toFixed(1)},${(HUB.y + HEX_R * Math.sin(r)).toFixed(1)}`; }).join(" ");
-hub.append(el("polygon", { points: hexPts }),
-  el("text", { x: HUB.x, y: HUB.y + 2, "text-anchor": "middle", style: "font: 800 26px var(--display)" }, "sarek"),
-  el("text", { x: HUB.x, y: HUB.y + 22, "text-anchor": "middle", class: "ver" }, HUB.rel));
-bind(hub, HUB); gS.append(hub);
 
-function bind(g, s) {
-  g.addEventListener("click", () => select({ stn: s }));
-  g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select({ stn: s }); } });
+function activate(node, fn) {
+  node.setAttribute("tabindex", 0);
+  node.addEventListener("click", fn);
+  node.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); fn(); } });
 }
 
 const card = document.getElementById("card");
 const pill = st => `<span class="pill ${st}">${ST[st]}</span>`;
-const nfUrl = id => byId[id].ext ? null : `https://nf-co.re/${id}`;
-function link(id) { const u = id === "igenomes" ? "https://ewels.github.io/AWS-iGenomes/" : id === "annotation-cache" ? "https://annotation-cache.github.io/" : nfUrl(id);
+function link(s) { const u = s.url ?? `https://nf-co.re/${s.id}`;
   return `<a href="${u}" target="_blank" rel="noopener">${u.replace("https://", "")}</a>`; }
 
-function select({ stn, edge }) {
-  svg.classList.add("focus");
+function highlight(nodes) {
   svg.querySelectorAll(".on, .sel").forEach(n => n.classList.remove("on", "sel"));
-  if (stn) {
-    const ids = new Set([stn.id]);
-    E.filter(e => e.f === stn.id || e.t === stn.id).forEach(e => { ids.add(e.f); ids.add(e.t); document.getElementById(e.id).classList.add("on"); });
-    ids.forEach(id => svg.querySelector(`[data-id="${id}"]`).classList.add("on"));
-    svg.querySelector(`[data-id="${stn.id}"]`).classList.add("sel");
-    const ins = E.filter(e => e.t === stn.id), outs = E.filter(e => e.f === stn.id);
-    card.innerHTML = `<div class="kicker">${stn.ext ? "Resource" : "Pipeline"}${stn.rel && !stn.ext ? " · " + stn.rel : ""}</div>
-      <h2>${stn.id}</h2><p>${stn.blurb}</p>
-      <dl>${stn.takes ? `<dt>Takes</dt><dd>${stn.takes}</dd>` : ""}<dt>Gives</dt><dd>${stn.gives}</dd>
-      ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
-      ${outs.length ? `<dt>To</dt><dd>${outs.map(e => e.t).join(", ")}</dd>` : ""}
-      <dt>Link</dt><dd>${link(stn.id)}</dd></dl>`;
-  } else {
-    const p = document.getElementById(edge.id); p.classList.add("on");
-    [edge.f, edge.t].forEach(id => svg.querySelector(`[data-id="${id}"]`).classList.add("on"));
-    card.innerHTML = `<div class="kicker">Handoff · ${LN[edge.line]}</div>
-      <h2>${edge.f} → ${edge.t}</h2><div>${pill(edge.st)}</div>
-      <dl><dt>Through</dt><dd class="mono">${edge.via}</dd><dt>Note</dt><dd>${edge.note}</dd></dl>`;
-  }
+  svg.classList.toggle("focus", nodes.length > 0);
+  nodes.forEach(n => n.classList.add("on"));
+}
+function selectStation(s) {
+  const ins = E.filter(e => e.t === s.id), outs = E.filter(e => e.f === s.id);
+  highlight([s.node, ...[...ins, ...outs].flatMap(e => [e.node, byId[e.f].node, byId[e.t].node])]);
+  s.node.classList.add("sel");
+  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : `Pipeline · ${s.rel}${s.tag ? ` (${s.tag})` : ""}`}</div>
+    <h2>${s.id}</h2><p>${s.blurb}</p>
+    <dl>${s.takes ? `<dt>Takes</dt><dd>${s.takes}</dd>` : ""}<dt>Gives</dt><dd>${s.gives}</dd>
+    ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
+    ${outs.length ? `<dt>To</dt><dd>${outs.map(e => e.t).join(", ")}</dd>` : ""}
+    <dt>Link</dt><dd>${link(s)}</dd></dl>`;
+}
+function selectEdge(e) {
+  highlight([e.node, byId[e.f].node, byId[e.t].node]);
+  card.innerHTML = `<div class="kicker">Handoff · ${LN[e.line]}</div>
+    <h2>${e.f} → ${e.t}</h2><div>${pill(e.st)}</div>
+    <dl><dt>Through</dt><dd class="mono">${e.via}</dd><dt>Note</dt><dd>${e.note}</dd></dl>`;
 }
 function reset() {
-  svg.classList.remove("focus");
-  svg.querySelectorAll(".on, .sel").forEach(n => n.classList.remove("on", "sel"));
-  card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length} stations, ${E.length} handoffs</h2>
-    <p>${E.filter(e => e.st === "native").length} handoffs work natively, ${E.filter(e => e.st === "reshape").length} need the samplesheet edited, ${E.filter(e => e.st === "unchecked").length} are not checked yet.</p>
+  highlight([]);
+  card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length - 1} stations around sarek, ${E.length} handoffs</h2>
+    <p>${Object.entries(ST).map(([k, v]) => `${v}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
     <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
@@ -318,14 +345,16 @@ document.getElementById("legend").innerHTML =
   Object.entries(LN).map(([k, v]) => `<span>${sw("", `var(--${k})`)}${v}</span>`).join("") +
   Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v}</span>`).join("");
 
-document.getElementById("t-st").innerHTML = [HUB, ...S].map(s =>
-  `<tr class="clickable" data-id="${s.id}"><td><strong>${s.id}</strong></td><td class="mono">${s.ext ? "resource" : s.rel || "?"}</td><td>${s.takes}</td><td>${s.gives}</td></tr>`).join("");
-document.getElementById("t-e").innerHTML = E.map(e =>
-  `<tr class="clickable" data-e="${e.id}"><td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td></tr>`).join("");
-document.querySelectorAll("tr.clickable").forEach(tr => tr.addEventListener("click", () => {
-  tr.dataset.id ? select({ stn: byId[tr.dataset.id] }) : select({ edge: E.find(e => e.id === tr.dataset.e) });
-  svg.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
-}));
+function row(cells, open) {
+  const tr = document.createElement("tr");
+  tr.className = "clickable"; tr.innerHTML = cells;
+  activate(tr, () => { open(); svg.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); });
+  return tr;
+}
+document.getElementById("t-st").append(...S.map(s =>
+  row(`<td><strong>${s.id}</strong></td><td class="mono">${release(s)}</td><td>${s.takes}</td><td>${s.gives}</td>`, () => selectStation(s))));
+document.getElementById("t-e").append(...E.map(e =>
+  row(`<td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td>`, () => selectEdge(e))));
 
 reset();
 </script>
