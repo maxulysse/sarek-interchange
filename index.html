@@ -134,7 +134,7 @@ const S = [
   { id: "downloadsnpeffcache", x: 920, y: 240, rel: "99", side: "below", url: "https://github.com/annotation-cache/downloadsnpeffcache",
     blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
     takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
-  { id: "variantprioritization", x: 640, y: 110, rel: "1.0.0", side: "above",
+  { id: "variantprioritization", x: 880, y: 520, rel: "1.0.0", side: "below",
     blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
     takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
   { id: "variantbenchmarking", x: 880, y: 400, rel: "1.6.1", side: "below",
@@ -160,19 +160,15 @@ const E = [
     note: "Not in sarek 3.12.0. Added by nf-core/sarek#2307, still open." },
   { f: "createpanelrefs", t: "sarek", hp: ["t", -12], line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
     note: "Mutect2 PON and CNVkit reference plug into sarek. GATK gCNV models and Gens PON have no sarek param." },
-  { f: "createpanelrefs", t: "variantprioritization", line: "res", st: "unchecked", via: "--pon_vcf",
-    note: "Param exists; not checked that the Mutect2 PON is the expected format." },
   { f: "downloadvepcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
     note: "Builds the VEP side of the bucket." },
   { f: "downloadsnpeffcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
     note: "Builds the snpEff side of the bucket." },
   { f: "annotation-cache", t: "sarek", hp: ["r", -30], line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
     note: "Sarek pulls the matching cache for --tools vep,snpeff." },
-  { f: "annotation-cache", t: "variantprioritization", line: "res", st: "unchecked", via: "--vep_cache, --vep_cache_version",
-    note: "Param exists; not checked against the bucket layout." },
-  { f: "sarek", t: "variantprioritization", hp: ["t", 12], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+  { f: "sarek", t: "variantprioritization", hp: ["r", 30], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
-  { f: "sarek", t: "variantbenchmarking", hp: ["r", 20], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+  { f: "sarek", t: "variantbenchmarking", hp: ["r", 8], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
 ];
 
@@ -289,7 +285,7 @@ function selectEdge(e) {
 function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length} stations around sarek, ${E.length} handoffs</h2>
-    <p>${E.filter(e => e.st === "native").length} handoffs work natively, ${E.filter(e => e.st === "reshape").length} need the samplesheet edited, ${E.filter(e => e.st === "unchecked").length} are not checked yet, ${E.filter(e => e.st === "planned").length} is planned.</p>
+    <p>${Object.entries(ST).map(([k, v]) => `${v}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
     <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
