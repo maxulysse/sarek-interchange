@@ -69,7 +69,8 @@ th { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08e
 th .sort { font: inherit; text-transform: inherit; letter-spacing: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 th[aria-sort="ascending"] .sort::after { content: " ▲"; } th[aria-sort="descending"] .sort::after { content: " ▼"; }
 tr.clickable { cursor: pointer; } tr.clickable:hover td, tr.clickable:focus-visible td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
-footer { color: var(--muted); font-size: 13px; }
+footer { color: var(--muted); font-size: 13px; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 18px; display: grid; gap: 6px; }
+footer p { margin: 0; } footer a { color: var(--res); }
 header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .theme { flex: none; font: 500 13px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--rule); border-radius: 99px; padding: 6px 14px; cursor: pointer; }
 </style>
@@ -100,7 +101,12 @@ document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-s
     <div class="scroller"><table><thead><tr><th>From</th><th>To</th><th>Status</th><th>Connects through</th><th>Note</th></tr></thead><tbody id="t-e"></tbody></table></div>
   </details>
 
-  <footer>Draft, checked on 2026-11-16 against each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code).</footer>
+  <footer>
+    <p>Draft, checked on 2026-11-16 against each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code).</p>
+    <p>Inspired by the <a href="https://vagkaratzas.github.io/meta-omics-sig/">meta-omics metro map</a> that <a href="https://github.com/vagkaratzas">Evangelos Karatzas</a> built for the nf-core <a href="https://nf-co.re/special-interest-groups/meta-omics">meta-omics special interest group</a>.
+    Thanks to <a href="https://github.com/famosab">Famke</a> and <a href="https://github.com/FriederikeHanssen">Rike</a>, who actively took part in this plan, and to the whole <a href="https://nf-co.re/">nf-core</a> community and the contributors of every pipeline on the map.</p>
+    <p>Source on <a href="https://github.com/maxulysse/sarek-interchange">GitHub</a>.</p>
+  </footer>
 </div>
 
 <script>
