@@ -206,9 +206,10 @@ const E = [
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
-const ST = { native: "Native", planned: "Planned" };
-const ST_NOTE = { native: "both pipelines support it in code; the chain has not been run end to end",
-  planned: "needs a hand-built samplesheet, a change in a pipeline, or a release" };
+const ST = {
+  native: { label: "Native", note: "both pipelines support it in code; the chain has not been run end to end" },
+  planned: { label: "Planned", note: "needs a hand-built samplesheet, a change in a pipeline, or a release" },
+};
 const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
@@ -291,7 +292,7 @@ E.forEach((e, i) => {
   const d = pathFor(e);
   e.node = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}` });
   const hit = el("path", { d, class: "hit" });
-  hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
+  hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st].label}`));
   hit.addEventListener("click", () => selectEdge(e));
   gL.append(e.node, hit);
   if (!reduced) {
@@ -328,7 +329,7 @@ function activate(node, fn) {
 }
 
 const card = document.getElementById("card");
-const pill = st => `<span class="pill ${st}">${ST[st]}</span>`;
+const pill = st => `<span class="pill ${st}">${ST[st].label}</span>`;
 function link(s) { const u = s.url ?? `https://nf-co.re/${s.id}`;
   return `<a href="${u}" target="_blank" rel="noopener">${u.replace("https://", "")}</a>`; }
 
@@ -358,7 +359,7 @@ function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length - 1} stations around sarek, ${E.length} handoffs</h2>
     <p>Where nf-core/sarek gets its input data and resources, and where its results go next. Each line is a handoff between two pipelines.</p>
-    ${Object.entries(ST).map(([k, v]) => `<p><strong>${v}: ${E.filter(e => e.st === k).length}</strong>, ${ST_NOTE[k]}.</p>`).join("")}
+    ${Object.entries(ST).map(([k, v]) => `<p><strong>${v.label}: ${E.filter(e => e.st === k).length}</strong>, ${v.note}.</p>`).join("")}
     <p style="color:var(--muted)">Select a station or a line for details. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
@@ -368,7 +369,7 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape") reset(); }
 const sw = (cls, color) => `<svg width="38" height="10" aria-hidden="true"><line x1="5" y1="5" x2="33" y2="5" class="line ${cls}" style="stroke:${color};stroke-width:5"/></svg>`;
 document.getElementById("legend").innerHTML =
   Object.entries(LN).map(([k, v]) => `<span>${sw("", `var(--${k})`)}${v}</span>`).join("") +
-  Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v}</span>`).join("");
+  Object.entries(ST).map(([k, v]) => `<span>${sw(k, "var(--fg)")}${v.label}</span>`).join("");
 
 function row(cells, open) {
   const tr = document.createElement("tr");
