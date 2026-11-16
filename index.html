@@ -8,17 +8,17 @@
 /* Layout: metro map of sarek as the interchange; lines = reads in, resources down, results out; detail card beside the map */
 :root {
   --bg: #f5f7f6; --surface: #ffffff; --fg: #17201c; --muted: #5b6862; --rule: #d7dfdb;
-  --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --ext: #7a8781; --hub: #1d8a4e; --hub-fg: #ffffff;
+  --reads: #1f9d55; --res: #2b6cb0; --out: #c05621; --hub: #1d8a4e; --hub-fg: #ffffff;
   --display: "Overpass", "Inter", system-ui, sans-serif;
   --body: "Inter", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
+  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
 
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
@@ -43,7 +43,6 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
 .mark { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transform-box: fill-box; transform-origin: center; transition: transform .15s; }
-.stn.external .mark { stroke: var(--ext); }
 .stn text { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
 .stn:not(.hub) text { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
@@ -249,7 +248,7 @@ E.forEach((e, i) => {
 
 const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
 S.forEach(s => {
-  s.node = el("g", { class: "stn" + (s.ext ? " external" : ""), role: "button", "aria-label": s.id });
+  s.node = el("g", { class: "stn", role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
   s.node.append(s.ext ? el("rect", { x: s.x - 9, y: s.y - 9, width: 18, height: 18, class: "mark" }) : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" }),
     el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
