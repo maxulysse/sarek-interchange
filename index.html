@@ -23,7 +23,6 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(-
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h2 { font: 800 18px/1.2 var(--display); margin: 0; }
-.sub { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
 code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0 18px 14px; font-size: 13px; color: var(--muted); align-items: center; }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
@@ -71,7 +70,7 @@ th .sort { font: inherit; text-transform: inherit; letter-spacing: inherit; colo
 th[aria-sort="ascending"] .sort::after { content: " ▲"; } th[aria-sort="descending"] .sort::after { content: " ▼"; }
 tr.clickable { cursor: pointer; } tr.clickable:hover td, tr.clickable:focus-visible td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
 footer { color: var(--muted); font-size: 13px; }
-header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .theme { flex: none; font: 500 13px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--rule); border-radius: 99px; padding: 6px 14px; cursor: pointer; }
 </style>
 <script>
@@ -83,12 +82,7 @@ document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-s
 
 <div class="wrap">
   <header>
-    <div>
-      <h1>Sarek Interchange</h1>
-      <p class="sub">Where nf-core/sarek gets its input data and resources, and where its variants go next.
-      Each line is a handoff: the param or samplesheet that connects two pipelines.
-      Select a station or a line for details.</p>
-    </div>
+    <h1>Sarek Interchange</h1>
     <button class="theme" id="theme" type="button"></button>
   </header>
 
@@ -350,8 +344,9 @@ function selectEdge(e) {
 function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length - 1} stations around sarek, ${E.length} handoffs</h2>
+    <p>Where nf-core/sarek gets its input data and resources, and where its results go next. Each line is a handoff between two pipelines.</p>
     <p>${Object.entries(ST).map(([k, v]) => `${v}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
-    <p style="color:var(--muted)">Select a station or line on the map. Click the empty map to come back here.</p>`;
+    <p style="color:var(--muted)">Select a station or a line for details. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape") reset(); });
