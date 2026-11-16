@@ -85,7 +85,7 @@ footer { color: var(--muted); font-size: 13px; }
   <div class="legend" id="legend"></div>
 
   <div class="main">
-    <div class="map"><svg id="map" viewBox="0 0 1000 760" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
+    <div class="map"><svg id="map" viewBox="0 0 1000 680" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
     <aside class="card" id="card" aria-live="polite"></aside>
   </div>
 
@@ -112,7 +112,7 @@ const S = [
   { id: "demultiplex", x: 140, y: 440, rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 140, y: 560, rel: "2.2.1", side: "left",
+  { id: "bamtofastq", x: 140, y: 600, rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
   { id: "seqinspector", x: 320, y: 312, rel: "1.1.2", tag: "optional", side: "below",
@@ -145,10 +145,10 @@ const S = [
   { id: "tumourevo", x: 920, y: 600, rel: "1.0.0", side: "below",
     blurb: "Reconstructs tumour evolution: subclonal deconvolution, driver annotation and mutational signatures, for one or many samples per patient.",
     takes: "Samplesheet: dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller, cancer_type", gives: "Subclonal clusters, drivers, signatures" },
-  { id: "epitopeprediction", x: 920, y: 700, rel: "3.2.0", side: "below",
+  { id: "epitopeprediction", x: 660, y: 600, rel: "3.2.0", side: "below",
     blurb: "Predicts which mutated peptides bind the patient's HLA alleles, for MHC class I or II.",
     takes: "Samplesheet: sample, alleles, mhc_class, filename (raw somatic VCF), germline_vcf, tumor_sample", gives: "Ranked neoepitope predictions" },
-  { id: "hlatyping", x: 700, y: 700, rel: "2.2.0", side: "below",
+  { id: "hlatyping", x: 400, y: 600, rel: "2.2.0", side: "below",
     blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
     takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
