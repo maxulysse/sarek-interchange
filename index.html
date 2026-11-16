@@ -100,7 +100,7 @@ document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-s
     <div class="scroller"><table><thead><tr><th>From</th><th>To</th><th>Status</th><th>Connects through</th><th>Note</th></tr></thead><tbody id="t-e"></tbody></table></div>
   </details>
 
-  <footer>Draft. Releases, params and samplesheet columns read from each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code) on 2026-11-16. Unreleased versions are marked planned in their card. A "native" status means both ends support the handoff in code. It does not mean the chain has been run end to end. "Planned" means it needs a hand-built samplesheet or a change in a pipeline.</footer>
+  <footer>Draft, checked on 2026-11-16 against each pipeline's latest release (<code>nextflow_schema.json</code>, <code>assets/schema_input.json</code>, workflow code).</footer>
 </div>
 
 <script>
@@ -196,6 +196,8 @@ const E = [
 ];
 
 const ST = { native: "Native", planned: "Planned" };
+const ST_NOTE = { native: "both pipelines support it in code; the chain has not been run end to end",
+  planned: "needs a hand-built samplesheet, a change in a pipeline, or a release" };
 const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
@@ -345,7 +347,7 @@ function reset() {
   highlight([]);
   card.innerHTML = `<div class="kicker">Overview</div><h2>${S.length - 1} stations around sarek, ${E.length} handoffs</h2>
     <p>Where nf-core/sarek gets its input data and resources, and where its results go next. Each line is a handoff between two pipelines.</p>
-    <p>${Object.entries(ST).map(([k, v]) => `${v}: ${E.filter(e => e.st === k).length}`).join(" · ")}</p>
+    ${Object.entries(ST).map(([k, v]) => `<p><strong>${v}: ${E.filter(e => e.st === k).length}</strong>, ${ST_NOTE[k]}.</p>`).join("")}
     <p style="color:var(--muted)">Select a station or a line for details. Click the empty map to come back here.</p>`;
 }
 svg.addEventListener("click", ev => { if (ev.target === svg) reset(); });
