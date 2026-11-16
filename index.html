@@ -119,7 +119,7 @@ const S = [
   { id: "igenomes", x: 140, y: 80, ext: true, square: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 350, y: 80, rel: "1.1.0", side: "above",
+  { id: "references", x: 350, y: 80, rel: "1.1.0", planned: true, side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
   { id: "createpanelrefs", x: 508, y: 80, rel: "1.1.0", side: "above",
@@ -269,7 +269,7 @@ function selectStation(s) {
   const ins = E.filter(e => e.t === s.id), outs = E.filter(e => e.f === s.id);
   highlight([s.node, ...[...ins, ...outs].flatMap(e => [e.node, byId[e.f].node, byId[e.t].node])]);
   s.node.classList.add("sel");
-  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + release(s)}</div>
+  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + release(s) + (s.planned ? " (planned)" : "")}</div>
     <h2>${s.id}</h2><p>${s.blurb}</p>
     <dl>${s.takes ? `<dt>Takes</dt><dd>${s.takes}</dd>` : ""}<dt>Gives</dt><dd>${s.gives}</dd>
     ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
