@@ -1,0 +1,16 @@
+name: Render
+
+on:
+  pull_request:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load the page in headless Chrome and fail on script errors
+        run: |
+          google-chrome --headless=new --no-sandbox --enable-logging=stderr --v=0 --virtual-time-budget=2000 \
+            --dump-dom "file://$PWD/index.html" 2> chrome.log > dom.html
+          if grep -i 'Uncaught' chrome.log; then exit 1; fi
+          grep -q 'class="stn' dom.html
