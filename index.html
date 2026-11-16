@@ -51,7 +51,6 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn:focus-visible { outline: none; } .stn:focus-visible .mark { stroke: var(--res); }
 .hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
 .hub .ver { fill: var(--hub-fg); opacity: .7; } .hub .name { font: 800 26px var(--display); }
-svg.narrow .stn text { font-size: 27px; } svg.narrow .stn .ver { font-size: 20px; } svg.narrow .hub .name { font-size: 34px; }
 .dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; } .dot.planned { opacity: .5; }
 svg.focus .line, svg.focus .stn, svg.focus .dot { opacity: .18; }
 svg.focus .on { opacity: 1 !important; }
@@ -153,9 +152,10 @@ const S = [
     blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
     takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
-// Narrow screens fit the whole map to their width, with larger labels so they stay readable.
+// Narrow screens fit the whole map to their width and scale every label by F so it stays readable.
 const narrow = matchMedia("(max-width: 640px)");
 narrow.addEventListener("change", () => location.reload());
+const F = narrow.matches ? 1.8 : 1;
 const E = [
   { f: "fetchngs", t: "seqinspector", line: "reads", st: "planned", via: "samplesheet/samplesheet.csv, then --input",
     note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
@@ -265,7 +265,8 @@ function rounded(pts) {
 }
 
 const svg = document.getElementById("map");
-if (narrow.matches) { svg.classList.add("narrow"); svg.setAttribute("viewBox", "-70 -20 1140 730"); }
+if (narrow.matches) { const pad = 100 * (F - 1);
+  svg.classList.add("narrow"); svg.setAttribute("viewBox", `${-pad} ${-pad / 2} ${1000 + 2 * pad} ${680 + pad}`); }
 const gL = el("g"), gD = el("g"), gS = el("g");
 svg.append(gL, gD, gS);
 
@@ -288,8 +289,6 @@ E.forEach((e, i) => {
   }
 });
 
-// Narrow-screen labels are larger, so their offsets grow by F.
-const F = narrow.matches ? 1.8 : 1;
 const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"], inside: [0, 0, "middle"] };
 const hexPts = s => [-90, -30, 30, 90, 150, 210].map(a => { const r = a * Math.PI / 180;
   return `${(s.x + HEX_R * Math.cos(r)).toFixed(1)},${(s.y + HEX_R * Math.sin(r)).toFixed(1)}`; }).join(" ");
@@ -298,10 +297,12 @@ const mark = s => s.hub ? el("polygon", { points: hexPts(s) })
   : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" });
 S.forEach(s => {
   s.node = el("g", { class: ["stn", s.hub && "hub", s.tag].filter(Boolean).join(" "), role: "button", "aria-label": s.id });
-  const [dx, dy, anc] = LBL[s.side].map(v => typeof v === "number" ? v * F : v);
-  s.node.append(mark(s),
-    el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc, class: "name" }, s.id),
-    el("text", { x: s.x + dx, y: s.y + dy + 15 * F, "text-anchor": anc, class: "ver" }, release(s)));
+  const [dx, dy, anc] = LBL[s.side];
+  // The hub label sits inside the fixed-size hexagon, so it keeps its size.
+  const label = el("g", { transform: `translate(${s.x},${s.y}) scale(${s.hub ? 1 : F})` });
+  label.append(el("text", { x: dx, y: dy, "text-anchor": anc, class: "name" }, s.id),
+    el("text", { x: dx, y: dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
+  s.node.append(mark(s), label);
   activate(s.node, () => selectStation(s)); gS.append(s.node);
 });
 
