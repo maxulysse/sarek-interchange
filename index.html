@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sarek Interchange</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -17,7 +21,7 @@
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
   --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --ext: #8b9892; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
 
-body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: grid; gap: 20px; }
@@ -34,7 +38,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .map { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
 .map svg { display: block; width: 100%; min-width: 760px; height: auto; }
 
-.line { fill: none; stroke-width: 7; stroke-linecap: round; transition: opacity .2s; }
+.line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
 .line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
@@ -43,6 +47,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn.external circle { stroke: var(--ext); stroke-dasharray: 4 3; }
 .stn text, .elabel { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
+.stn:not(.hub) text { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .stn:hover circle, .stn:focus-visible circle, .stn.sel circle { r: 13; }
 .stn:focus-visible { outline: none; } .stn:focus-visible circle { stroke: var(--res); }
 .hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
@@ -100,40 +105,40 @@ footer { color: var(--muted); font-size: 13px; }
 
 <script>
 const S = [
-  { id: "fetchngs", x: 150, y: 200, rel: "1.12.0", side: "left",
+  { id: "fetchngs", x: 140, y: 200, rel: "1.12.0", side: "left",
     blurb: "Downloads public sequencing data and metadata from SRA, ENA, DDBJ and GEO.",
     takes: "List of SRA/ENA/GEO/DDBJ IDs", gives: "FASTQ, metadata, a samplesheet for a named nf-core pipeline" },
-  { id: "demultiplex", x: 150, y: 320, rel: "1.7.1", side: "left",
+  { id: "demultiplex", x: 140, y: 440, rel: "1.7.1", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 150, y: 440, rel: "2.2.0", side: "left",
+  { id: "bamtofastq", x: 140, y: 330, rel: "2.2.0", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
-  { id: "seqinspector", x: 300, y: 520, rel: "1.1.2", side: "below",
+  { id: "seqinspector", x: 350, y: 530, rel: "1.1.2", side: "below",
     blurb: "QC of sequencing runs and FASTQ before analysis. Bundles: illumina, ont, fastq, bam, minimal.",
     takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
-  { id: "igenomes", x: 150, y: 70, rel: "external", ext: true, side: "above",
+  { id: "igenomes", x: 140, y: 80, rel: "external", ext: true, side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. Every pipeline on this map reads it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 330, y: 70, rel: "0.1", side: "above",
+  { id: "references", x: 350, y: 80, rel: "0.1", side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
-  { id: "createpanelrefs", x: 540, y: 70, rel: "1.0.0", side: "left",
+  { id: "createpanelrefs", x: 508, y: 80, rel: "1.0.0", side: "above",
     blurb: "Builds panels of normals from a cohort of normal samples.",
     takes: "Normal BAM/CRAM cohort", gives: "Mutect2 PON, CNVkit reference, GATK gCNV models, Gens PON" },
-  { id: "annotation-cache", x: 730, y: 100, rel: "external", ext: true, side: "upleft",
+  { id: "annotation-cache", x: 770, y: 160, rel: "external", ext: true, side: "below",
     blurb: "Public S3 bucket of VEP and snpEff caches, read by sarek with --download_cache.",
     takes: "Caches built by downloadvepcache and downloadsnpeffcache", gives: "VEP cache, snpEff cache" },
-  { id: "downloadvepcache", x: 920, y: 50, rel: "116", side: "above",
+  { id: "downloadvepcache", x: 920, y: 80, rel: "116", side: "above",
     blurb: "Downloads Ensembl VEP caches for the annotation-cache bucket.",
     takes: "Species, assembly, VEP version", gives: "VEP cache (Ensembl 116)" },
-  { id: "downloadsnpeffcache", x: 920, y: 140, rel: "99", side: "below",
+  { id: "downloadsnpeffcache", x: 920, y: 240, rel: "99", side: "below",
     blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
     takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
-  { id: "variantprioritization", x: 870, y: 240, rel: "1.0.0", side: "above",
+  { id: "variantprioritization", x: 640, y: 110, rel: "1.0.0", side: "above",
     blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
     takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
-  { id: "variantbenchmarking", x: 870, y: 390, rel: "1.6.1", side: "below",
+  { id: "variantbenchmarking", x: 880, y: 400, rel: "1.6.1", side: "below",
     blurb: "Compares variant calls against a truth set and reports precision and recall per caller.",
     takes: "Samplesheet: id, caller, test_vcf; --truth_vcf", gives: "Benchmark metrics and plots" },
 ];
@@ -142,19 +147,19 @@ const HUB = { id: "sarek", x: 520, y: 320, rel: "3.10.0",
   takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" };
 
 const E = [
-  { f: "fetchngs", t: "sarek", line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
+  { f: "fetchngs", t: "sarek", hp: ["l", -10], line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
     note: "fetchngs writes a sarek-shaped samplesheet next to the FASTQ." },
-  { f: "demultiplex", t: "sarek", line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
+  { f: "demultiplex", t: "sarek", hp: ["l", 30], line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
     note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
-  { f: "demultiplex", t: "seqinspector", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
+  { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
     note: "Same FASTQ, QC'd before sarek spends compute on them." },
-  { f: "bamtofastq", t: "sarek", line: "reads", st: "unchecked", via: "FASTQ, samplesheet by hand",
+  { f: "bamtofastq", t: "sarek", hp: ["l", 10], line: "reads", st: "unchecked", via: "FASTQ, samplesheet by hand",
     note: "No sarek samplesheet emitter checked. Sarek can also take BAM/CRAM directly with --step mapping." },
-  { f: "igenomes", t: "sarek", line: "res", st: "native", via: "--genome, --igenomes_base",
+  { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
-  { f: "references", t: "sarek", line: "res", st: "native", via: "--references, --references_datasheets_path",
+  { f: "references", t: "sarek", hp: ["t", -40], line: "res", st: "native", via: "--references, --references_datasheets_path",
     note: "Datasheet lists prebuilt indices, so sarek skips building them." },
-  { f: "createpanelrefs", t: "sarek", line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
+  { f: "createpanelrefs", t: "sarek", hp: ["t", -12], line: "res", st: "native", via: "--pon, --pon_tbi, --cnvkit_reference",
     note: "Mutect2 PON and CNVkit reference plug into sarek. GATK gCNV models and Gens PON have no sarek param." },
   { f: "createpanelrefs", t: "variantprioritization", line: "res", st: "unchecked", via: "--pon_vcf",
     note: "Param exists; not checked that the Mutect2 PON is the expected format." },
@@ -162,13 +167,13 @@ const E = [
     note: "Builds the VEP side of the bucket." },
   { f: "downloadsnpeffcache", t: "annotation-cache", line: "res", st: "native", via: "Uploaded to the S3 bucket",
     note: "Builds the snpEff side of the bucket." },
-  { f: "annotation-cache", t: "sarek", line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
+  { f: "annotation-cache", t: "sarek", hp: ["r", -30], line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
     note: "Sarek pulls the matching cache for --tools vep,snpeff." },
   { f: "annotation-cache", t: "variantprioritization", line: "res", st: "unchecked", via: "--vep_cache, --vep_cache_version",
     note: "Param exists; not checked against the bucket layout." },
-  { f: "sarek", t: "variantprioritization", line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+  { f: "sarek", t: "variantprioritization", hp: ["t", 12], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
-  { f: "sarek", t: "variantbenchmarking", line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+  { f: "sarek", t: "variantbenchmarking", hp: ["r", 20], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
 ];
 
@@ -181,23 +186,49 @@ const all = [...S, HUB];
 const byId = Object.fromEntries(all.map(s => [s.id, s]));
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Edges enter the hub on its nearest face, so lines fan in like a metro interchange.
+// Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
+// arrive side by side like tracks into an interchange.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
 const HEX_R = 72;
-function port(s, other) {
+function port(s, e) {
   if (s !== HUB) return [s.x, s.y];
-  const dx = other.x - HUB.x, dy = other.y - HUB.y;
-  if (Math.abs(dy) > Math.abs(dx) * 0.9) {
-    const ox = Math.max(-50, Math.min(50, dx * 0.25));
-    return [HUB.x + ox, HUB.y + Math.sign(dy) * (HEX_R - Math.abs(ox) / Math.sqrt(3))];
-  }
-  return [HUB.x + Math.sign(dx) * HEX_R * Math.sqrt(3) / 2, HUB.y + Math.max(-30, Math.min(30, dy * 0.15))];
+  const [face, off] = e.hp;
+  if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
+  return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
 }
-function pathFor(a, b) {
-  const [x1, y1] = port(a, b), [x2, y2] = port(b, a);
-  const vert = Math.abs(y2 - y1) > Math.abs(x2 - x1);
-  const m = vert ? (y1 + y2) / 2 : (x1 + x2) / 2;
-  return vert ? `M${x1},${y1} C${x1},${m} ${x2},${m} ${x2},${y2}` : `M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`;
+// Octilinear routing, like a subway map: straight runs joined by one 45-degree diagonal,
+// with rounded corners at each bend. Leaves the station along its main axis.
+const BEND_R = 18;
+function pathFor(e) {
+  const [x1, y1] = port(byId[e.f], e), [x2, y2] = port(byId[e.t], e);
+  const dx = x2 - x1, dy = y2 - y1, ax = Math.abs(dx), ay = Math.abs(dy);
+  const sx = Math.sign(dx), sy = Math.sign(dy);
+  let pts;
+  if (ax < 1 || ay < 1) pts = [[x1, y1], [x2, y2]];
+  else {
+    // Where the diagonal sits: "start" bends right away, "end" bends last, default in the middle.
+    const k = e.bend === "start" ? 0 : e.bend === "end" ? 1 : 0.5;
+    if (ax >= ay) { const r1 = (ax - ay) * k, r2 = (ax - ay) - r1;
+      pts = [[x1, y1], [x1 + sx * r1, y1], [x2 - sx * r2, y2], [x2, y2]]; }
+    else { const r1 = (ay - ax) * k, r2 = (ay - ax) - r1;
+      pts = [[x1, y1], [x1, y1 + sy * r1], [x2, y2 - sy * r2], [x2, y2]]; }
+    pts = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.5);
+  }
+  return rounded(pts);
+}
+function rounded(pts) {
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+    const l1 = Math.hypot(cx - px, cy - py), l2 = Math.hypot(nx - cx, ny - cy);
+    const r = Math.min(BEND_R, l1 / 2, l2 / 2);
+    if (r < 0.5) { d += ` L${cx.toFixed(1)},${cy.toFixed(1)}`; continue; }
+    const ax = cx - (cx - px) / l1 * r, ay = cy - (cy - py) / l1 * r;
+    const bx = cx + (nx - cx) / l2 * r, by = cy + (ny - cy) / l2 * r;
+    d += ` L${ax.toFixed(1)},${ay.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
+  }
+  const [lx, ly] = pts[pts.length - 1];
+  return d + ` L${lx.toFixed(1)},${ly.toFixed(1)}`;
 }
 
 const svg = document.getElementById("map");
@@ -206,7 +237,7 @@ svg.append(gL, gD, gS);
 
 E.forEach((e, i) => {
   e.id = "e" + i;
-  const d = pathFor(byId[e.f], byId[e.t]);
+  const d = pathFor(e);
   const p = el("path", { id: e.id, d, class: `line ${e.line} ${e.st}`, "data-f": e.f, "data-t": e.t });
   const hit = el("path", { d, class: "hit" });
   hit.append(el("title", {}, `${e.f} to ${e.t}: ${ST[e.st]}`));
@@ -220,7 +251,7 @@ E.forEach((e, i) => {
   }
 });
 
-const LBL = { upleft: [-16, -24, "end"], left: [-18, 5, "end"], right: [18, 5, "start"], above: [0, -22, "middle"], below: [0, 32, "middle"] };
+const LBL = { upleft: [-16, -24, "end"], left: [-18, 5, "end"], right: [18, 5, "start"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
 S.forEach(s => {
   const g = el("g", { class: "stn" + (s.ext ? " external" : ""), tabindex: 0, role: "button", "data-id": s.id, "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
@@ -298,3 +329,4 @@ document.querySelectorAll("tr.clickable").forEach(tr => tr.addEventListener("cli
 
 reset();
 </script>
+</html>
