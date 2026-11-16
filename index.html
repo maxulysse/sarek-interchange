@@ -44,6 +44,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn { cursor: pointer; }
 .stn circle { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transition: r .15s; }
 .stn.external circle { stroke: var(--ext); stroke-dasharray: 4 3; }
+.stn.planned circle { stroke-opacity: .35; }
 .stn text { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
 .stn:not(.hub) text { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
@@ -118,7 +119,7 @@ const S = [
   { id: "igenomes", x: 140, y: 80, ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 350, y: 80, rel: "0.1", side: "above",
+  { id: "references", x: 350, y: 80, rel: "1.0.0", planned: true, side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
   { id: "createpanelrefs", x: 508, y: 80, rel: "1.1.0", side: "above",
@@ -182,6 +183,7 @@ const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
 const all = [...S, HUB];
 const byId = Object.fromEntries(all.map(s => [s.id, s]));
+const release = s => s.ext ? "resource" : s.rel + (s.planned ? " (planned)" : "");
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
@@ -252,11 +254,11 @@ E.forEach((e, i) => {
 
 const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
 S.forEach(s => {
-  s.node = el("g", { class: "stn" + (s.ext ? " external" : ""), role: "button", "aria-label": s.id });
+  s.node = el("g", { class: "stn" + (s.ext ? " external" : "") + (s.planned ? " planned" : ""), role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
   s.node.append(el("circle", { cx: s.x, cy: s.y, r: 10 }),
     el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
-    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, s.rel ?? "resource"));
+    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
   activate(s.node, () => selectStation(s)); gS.append(s.node);
 });
 HUB.node = el("g", { class: "stn hub", role: "button", "aria-label": "sarek" });
@@ -287,7 +289,7 @@ function selectStation(s) {
   const ins = E.filter(e => e.t === s.id), outs = E.filter(e => e.f === s.id);
   highlight([s.node, ...[...ins, ...outs].flatMap(e => [e.node, byId[e.f].node, byId[e.t].node])]);
   s.node.classList.add("sel");
-  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + s.rel}</div>
+  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + release(s)}</div>
     <h2>${s.id}</h2><p>${s.blurb}</p>
     <dl>${s.takes ? `<dt>Takes</dt><dd>${s.takes}</dd>` : ""}<dt>Gives</dt><dd>${s.gives}</dd>
     ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
@@ -322,7 +324,7 @@ function row(cells, open) {
   return tr;
 }
 document.getElementById("t-st").append(...[HUB, ...S].map(s =>
-  row(`<td><strong>${s.id}</strong></td><td class="mono">${s.rel ?? "resource"}</td><td>${s.takes}</td><td>${s.gives}</td>`, () => selectStation(s))));
+  row(`<td><strong>${s.id}</strong></td><td class="mono">${release(s)}</td><td>${s.takes}</td><td>${s.gives}</td>`, () => selectStation(s))));
 document.getElementById("t-e").append(...E.map(e =>
   row(`<td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td>`, () => selectEdge(e))));
 
