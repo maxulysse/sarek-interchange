@@ -44,7 +44,6 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn { cursor: pointer; }
 .mark { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transform-box: fill-box; transform-origin: center; transition: transform .15s; }
 .stn.external .mark { stroke: var(--ext); stroke-dasharray: 4 3; }
-.stn.planned .mark { stroke-opacity: .35; }
 .stn text { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
 .stn:not(.hub) text { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
@@ -119,7 +118,7 @@ const S = [
   { id: "igenomes", x: 140, y: 80, ext: true, square: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 350, y: 80, rel: "1.0.0", planned: true, side: "above",
+  { id: "references", x: 350, y: 80, rel: "1.1.0", side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
   { id: "createpanelrefs", x: 508, y: 80, rel: "1.1.0", side: "above",
@@ -183,7 +182,7 @@ const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
 const all = [...S, HUB];
 const byId = Object.fromEntries(all.map(s => [s.id, s]));
-const release = s => s.ext ? "resource" : s.rel + (s.planned ? " (planned)" : "");
+const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
@@ -254,7 +253,7 @@ E.forEach((e, i) => {
 
 const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
 S.forEach(s => {
-  s.node = el("g", { class: "stn" + (s.ext ? " external" : "") + (s.planned ? " planned" : ""), role: "button", "aria-label": s.id });
+  s.node = el("g", { class: "stn" + (s.ext ? " external" : ""), role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
   s.node.append(s.square ? el("rect", { x: s.x - 9, y: s.y - 9, width: 18, height: 18, class: "mark" }) : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" }),
     el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
