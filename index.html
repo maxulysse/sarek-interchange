@@ -67,6 +67,8 @@ summary { padding: 14px 18px; cursor: pointer; font: 800 16px var(--display); }
 table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
 th, td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--rule); vertical-align: top; }
 th { font: 500 11px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+th .sort { font: inherit; text-transform: inherit; letter-spacing: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+th[aria-sort="ascending"] .sort::after { content: " ▲"; } th[aria-sort="descending"] .sort::after { content: " ▼"; }
 tr.clickable { cursor: pointer; } tr.clickable:hover td, tr.clickable:focus-visible td { background: color-mix(in srgb, var(--rule) 35%, transparent); }
 footer { color: var(--muted); font-size: 13px; }
 header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
@@ -372,6 +374,20 @@ document.getElementById("t-st").append(...S.map(s =>
   row(`<td><strong>${s.id}</strong></td><td class="mono">${release(s)}</td><td>${s.takes}</td><td>${s.gives}</td>`, () => selectStation(s))));
 document.getElementById("t-e").append(...E.map(e =>
   row(`<td>${e.f}</td><td>${e.t}</td><td>${pill(e.st)}</td><td class="mono">${e.via}</td><td>${e.note}</td>`, () => selectEdge(e))));
+
+// Sortable tables: a header click sorts by that column, a second click reverses it.
+document.querySelectorAll("table").forEach(table => table.querySelectorAll("th").forEach((th, col) => {
+  const btn = document.createElement("button");
+  btn.className = "sort"; btn.type = "button"; btn.textContent = th.textContent;
+  th.replaceChildren(btn);
+  btn.addEventListener("click", () => {
+    const dir = th.getAttribute("aria-sort") === "ascending" ? -1 : 1;
+    table.querySelectorAll("th").forEach(h => h.removeAttribute("aria-sort"));
+    th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending");
+    const body = table.tBodies[0], text = r => r.cells[col].textContent;
+    body.append(...[...body.rows].sort((a, b) => dir * text(a).localeCompare(text(b), undefined, { numeric: true })));
+  });
+}));
 
 // Theme toggle: the choice is stored in this browser and overrides the system setting.
 const root = document.documentElement, themeBtn = document.getElementById("theme");
