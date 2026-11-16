@@ -106,16 +106,16 @@ const S = [
   { id: "sarek", x: 520, y: 320, rel: "3.12.0", hub: true, side: "inside",
   blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
   takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" },
-  { id: "fetchngs", x: 140, y: 192, rel: "1.13.0", side: "left",
+  { id: "fetchngs", x: 140, y: 191, rel: "1.13.0", side: "left",
     blurb: "Downloads public sequencing data and metadata from SRA, ENA, DDBJ and GEO.",
     takes: "List of SRA/ENA/GEO/DDBJ IDs", gives: "FASTQ, metadata, a samplesheet for a named nf-core pipeline" },
-  { id: "demultiplex", x: 140, y: 432, rel: "1.8.0", side: "left",
+  { id: "demultiplex", x: 140, y: 431, rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
   { id: "bamtofastq", x: 140, y: 600, rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
-  { id: "seqinspector", x: 320, y: 312, rel: "1.1.2", tag: "optional", side: "below",
+  { id: "seqinspector", x: 320, y: 311, rel: "1.1.2", tag: "optional", side: "below",
     blurb: "Optional QC stop before sarek: QC of sequencing runs and FASTQ. Bundles: illumina, ont, fastq, bam, minimal.",
     takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
   { id: "igenomes", x: 140, y: 80, ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
@@ -200,10 +200,11 @@ const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Hub edges meet the hexagon face ("l", "r", "t" or "b") that points at their far station. Each face
-// spreads its edges GAP apart, ordered by where their far station sits, so lines never cross at the hub.
+// splits its length into equal slots, one per edge, ordered by where their far station sits, so lines
+// spread evenly and never cross at the hub.
 // Edges joining the same two stations spread the same way at the far end, so they run parallel.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
-const HEX_R = 72, GAP = 16;
+const HEX_R = 72;
 const across = face => face === "l" || face === "r" ? "y" : "x";
 const far = e => byId[e.f === HUB.id ? e.t : e.f];
 const hubEdges = E.filter(e => e.f === HUB.id || e.t === HUB.id);
@@ -212,7 +213,8 @@ hubEdges.forEach(e => { const s = far(e), dx = s.x - HUB.x, dy = s.y - HUB.y;
 E.forEach(e => e.shift = [0, 0]);
 Object.values(Object.groupBy(hubEdges, e => e.face)).forEach(es => {
   es.sort((a, b) => far(a)[across(a.face)] - far(b)[across(b.face)]);
-  es.forEach((e, i) => e.off = (i - (es.length - 1) / 2) * GAP);
+  const len = across(es[0].face) === "y" ? HEX_R : HEX_R * Math.sqrt(3);
+  es.forEach((e, i) => e.off = ((i + 0.5) / es.length - 0.5) * len);
 });
 Object.values(Object.groupBy(hubEdges, e => [e.f, e.t].sort().join())).forEach(es => {
   const mid = es.reduce((sum, e) => sum + e.off, 0) / es.length;
