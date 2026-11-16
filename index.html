@@ -42,6 +42,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .line.reshape { stroke-dasharray: 14 9; } .line.planned { stroke-opacity: .35; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
+.stn.optional .mark { stroke-dasharray: 5 4; }
 .mark { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transform-box: fill-box; transform-origin: center; transition: transform .15s; }
 .stn text { fill: var(--fg); font: 600 15px var(--display); }
 .stn .ver { fill: var(--muted); font: 400 11px var(--mono); }
@@ -108,16 +109,16 @@ const S = [
   { id: "demultiplex", x: 140, y: 440, rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 140, y: 334, rel: "2.2.1", side: "left",
+  { id: "bamtofastq", x: 200, y: 560, rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
-  { id: "seqinspector", x: 350, y: 530, rel: "1.1.2", side: "below",
-    blurb: "QC of sequencing runs and FASTQ before analysis. Bundles: illumina, ont, fastq, bam, minimal.",
+  { id: "seqinspector", x: 320, y: 320, rel: "1.1.2", tag: "optional", side: "below",
+    blurb: "Optional QC stop before sarek: QC of sequencing runs and FASTQ. Bundles: illumina, ont, fastq, bam, minimal.",
     takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
   { id: "igenomes", x: 140, y: 80, ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs and the downstream pipelines read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 350, y: 80, rel: "1.1.0", planned: true, side: "above",
+  { id: "references", x: 350, y: 80, rel: "1.1.0", tag: "planned", side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
   { id: "createpanelrefs", x: 508, y: 80, rel: "1.1.0", side: "above",
@@ -144,17 +145,13 @@ const HUB = { id: "sarek", x: 520, y: 320, rel: "3.12.0",
   takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" };
 
 const E = [
-  { f: "fetchngs", t: "sarek", hp: ["l", -10], line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
-    note: "fetchngs writes a sarek-shaped samplesheet next to the FASTQ." },
-  { f: "fetchngs", t: "seqinspector", bend: "start", line: "reads", st: "reshape", via: "samplesheet/samplesheet.csv, then --input",
+  { f: "fetchngs", t: "seqinspector", line: "reads", st: "reshape", via: "samplesheet/samplesheet.csv, then --input",
     note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
-  { f: "demultiplex", t: "sarek", hp: ["l", 34], line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
-    note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
-  { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
-    note: "Same FASTQ, QC'd before sarek spends compute on them." },
-  { f: "seqinspector", t: "sarek", hp: ["b", -40], line: "reads", st: "planned", via: "--continue_with_lint_fail false, then sarek on success",
-    note: "1.1.2 gates the whole run only: a lint failure stops it, CheckQC never does. A per-sample gate needs seqinspector to write a sarek sheet of samples that pass." },
-  { f: "bamtofastq", t: "sarek", hp: ["l", 8], sp: -6, line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
+  { f: "demultiplex", t: "seqinspector", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
+    note: "demultiplex writes this sheet and a sarek one for the same FASTQ." },
+  { f: "seqinspector", t: "sarek", hp: ["l", 0], line: "reads", st: "planned", via: "--continue_with_lint_fail false, then sarek on success",
+    note: "Optional: skip seqinspector and pass the sarek sheet straight on. fetchngs writes one with --nf_core_pipeline sarek; demultiplex leaves patient empty. As a gate, 1.1.2 only stops the whole run on a lint failure, and CheckQC never stops it. A per-sample gate needs seqinspector to write a sarek sheet of samples that pass." },
+  { f: "bamtofastq", t: "sarek", hp: ["l", 20], sp: -6, line: "reads", st: "reshape", via: "reads/*_{1,2}.merged.fastq.gz into patient, sample, lane, fastq_1, fastq_2",
     note: "Writes FASTQ only. Build the sarek sheet by hand: one row per pair, lane set by you. Sarek can also take BAM/CRAM directly with --step mapping." },
   { f: "igenomes", t: "sarek", hp: ["l", -30], line: "res", st: "native", via: "--genome, --igenomes_base",
     note: "Default route: --genome GATK.GRCh38 resolves every reference param." },
@@ -172,7 +169,7 @@ const E = [
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
   { f: "sarek", t: "variantbenchmarking", hp: ["r", 8], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
-  { f: "sarek", t: "bamtofastq", hp: ["l", 20], sp: 6, line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
+  { f: "sarek", t: "bamtofastq", hp: ["l", 32], sp: 6, line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
@@ -186,7 +183,7 @@ const byId = Object.fromEntries(all.map(s => [s.id, s]));
 const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Edges enter the hub on a named face ("l", "r", "t" or "b") at a fixed offset, so parallel lines
+// Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
 // arrive side by side like tracks into an interchange.
 // "sp" shifts an edge's station end vertically, so paired tracks sit either side of the station centre.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
@@ -194,7 +191,7 @@ const HEX_R = 72;
 function port(s, e) {
   if (s !== HUB) return [s.x, s.y + (e.sp ?? 0)];
   const [face, off] = e.hp;
-  if (face === "t" || face === "b") return [HUB.x + off, HUB.y + (face === "b" ? 1 : -1) * (HEX_R - Math.abs(off) / Math.sqrt(3))];
+  if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
   return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
 }
 // Octilinear routing, like a subway map: straight runs joined by one 45-degree diagonal,
@@ -207,12 +204,11 @@ function pathFor(e) {
   let pts;
   if (ax < 1 || ay < 1) pts = [[x1, y1], [x2, y2]];
   else {
-    // Where the diagonal sits: "start" bends right away, default in the middle.
-    const k = e.bend === "start" ? 0 : 0.5;
-    if (ax >= ay) { const r1 = (ax - ay) * k, r2 = (ax - ay) - r1;
-      pts = [[x1, y1], [x1 + sx * r1, y1], [x2 - sx * r2, y2], [x2, y2]]; }
-    else { const r1 = (ay - ax) * k, r2 = (ay - ax) - r1;
-      pts = [[x1, y1], [x1, y1 + sy * r1], [x2, y2 - sy * r2], [x2, y2]]; }
+    // The diagonal sits in the middle, with equal straight runs either side.
+    if (ax >= ay) { const r = (ax - ay) / 2;
+      pts = [[x1, y1], [x1 + sx * r, y1], [x2 - sx * r, y2], [x2, y2]]; }
+    else { const r = (ay - ax) / 2;
+      pts = [[x1, y1], [x1, y1 + sy * r], [x2, y2 - sy * r], [x2, y2]]; }
     pts = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.5);
   }
   return rounded(pts);
@@ -255,7 +251,7 @@ E.forEach((e, i) => {
 
 const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"] };
 S.forEach(s => {
-  s.node = el("g", { class: "stn", role: "button", "aria-label": s.id });
+  s.node = el("g", { class: "stn" + (s.tag ? " " + s.tag : ""), role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
   s.node.append(s.ext ? el("rect", { x: s.x - 9, y: s.y - 9, width: 18, height: 18, class: "mark" }) : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" }),
     el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc }, s.id),
@@ -290,7 +286,7 @@ function selectStation(s) {
   const ins = E.filter(e => e.t === s.id), outs = E.filter(e => e.f === s.id);
   highlight([s.node, ...[...ins, ...outs].flatMap(e => [e.node, byId[e.f].node, byId[e.t].node])]);
   s.node.classList.add("sel");
-  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + release(s) + (s.planned ? " (planned)" : "")}</div>
+  card.innerHTML = `<div class="kicker">${s.ext ? "Resource" : "Pipeline · " + release(s) + (s.tag ? ` (${s.tag})` : "")}</div>
     <h2>${s.id}</h2><p>${s.blurb}</p>
     <dl>${s.takes ? `<dt>Takes</dt><dd>${s.takes}</dd>` : ""}<dt>Gives</dt><dd>${s.gives}</dd>
     ${ins.length ? `<dt>From</dt><dd>${ins.map(e => e.f).join(", ")}</dd>` : ""}
