@@ -146,6 +146,8 @@ const HUB = { id: "sarek", x: 520, y: 320, rel: "3.12.0",
 const E = [
   { f: "fetchngs", t: "sarek", hp: ["l", -10], line: "reads", st: "native", via: "--nf_core_pipeline sarek, then --input",
     note: "fetchngs writes a sarek-shaped samplesheet next to the FASTQ." },
+  { f: "fetchngs", t: "seqinspector", bend: "start", line: "reads", st: "reshape", via: "samplesheet/samplesheet.csv, then --input",
+    note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
   { f: "demultiplex", t: "sarek", hp: ["l", 34], line: "reads", st: "reshape", via: "sarek samplesheet, then --input",
     note: "Written with lane filled and patient left empty. Fill patient (and sex/status for somatic runs) before use." },
   { f: "demultiplex", t: "seqinspector", bend: "start", line: "reads", st: "native", via: "seqinspector samplesheet, then --input",
