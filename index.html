@@ -23,7 +23,7 @@
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 20px; }
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h2 { font: 800 18px/1.2 var(--display); margin: 0; }
 .sub { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
@@ -35,7 +35,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
 @media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .map { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
-.map svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.map svg { display: block; width: 100%; height: auto; } .map svg:not(.portrait) { min-width: 760px; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
@@ -51,6 +51,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .stn:focus-visible { outline: none; } .stn:focus-visible .mark { stroke: var(--res); }
 .hub polygon { fill: var(--hub); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; } .hub text { fill: var(--hub-fg); }
 .hub .ver { fill: var(--hub-fg); opacity: .7; } .hub .name { font: 800 26px var(--display); }
+svg.portrait .stn text { font-size: 22px; } svg.portrait .stn .ver { font-size: 15px; } svg.portrait .hub .name { font-size: 34px; }
 .dot { fill: var(--surface); stroke: var(--fg); stroke-width: 2; pointer-events: none; } .dot.planned { opacity: .5; }
 svg.focus .line, svg.focus .stn, svg.focus .dot { opacity: .18; }
 svg.focus .on { opacity: 1 !important; }
@@ -103,55 +104,59 @@ footer { color: var(--muted); font-size: 13px; }
 
 <script>
 const S = [
-  { id: "sarek", x: 520, y: 320, rel: "3.12.0", hub: true, side: "inside",
+  { id: "sarek", x: 520, y: 320, p: [320, 500, "inside"], rel: "3.12.0", hub: true, side: "inside",
   blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
   takes: "Samplesheet: patient, sex, status, sample, lane, fastq_1, fastq_2 (or bam/cram)", gives: "BAM/CRAM, VCFs per caller, annotated VCFs, MultiQC report, restart CSVs" },
-  { id: "fetchngs", x: 140, y: 224, rel: "1.13.0", side: "left",
+  { id: "fetchngs", x: 140, y: 224, p: [224, 140, "above"], rel: "1.13.0", side: "left",
     blurb: "Downloads public sequencing data and metadata from SRA, ENA, DDBJ and GEO.",
     takes: "List of SRA/ENA/GEO/DDBJ IDs", gives: "FASTQ, metadata, a samplesheet for a named nf-core pipeline" },
-  { id: "demultiplex", x: 140, y: 398, rel: "1.8.0", side: "left",
+  { id: "demultiplex", x: 140, y: 398, p: [398, 140, "above"], rel: "1.8.0", side: "left",
     blurb: "Demultiplexes raw sequencer output into per-sample FASTQ.",
     takes: "BCL run folder, Illumina samplesheet", gives: "FASTQ, samplesheets for atacseq, methylseq, rnaseq, sarek, seqinspector, taxprofiler" },
-  { id: "bamtofastq", x: 140, y: 600, rel: "2.2.1", side: "left",
+  { id: "bamtofastq", x: 140, y: 600, p: [600, 140, "above"], rel: "2.2.1", side: "left",
     blurb: "Converts aligned BAM or CRAM back to FASTQ, for realignment against a new reference.",
     takes: "BAM or CRAM", gives: "FASTQ" },
-  { id: "seqinspector", x: 320, y: 311, rel: "1.1.2", tag: "optional", side: "below",
+  { id: "seqinspector", x: 320, y: 311, p: [311, 300, "right"], rel: "1.1.2", tag: "optional", side: "below",
     blurb: "Optional QC stop before sarek: QC of sequencing runs and FASTQ. Bundles: illumina, ont, fastq, bam, minimal.",
     takes: "Samplesheet of FASTQ, optional run folder", gives: "MultiQC QC report" },
-  { id: "igenomes", x: 140, y: 80, ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
+  { id: "igenomes", x: 140, y: 80, p: [80, 140, "above"], ext: true, url: "https://ewels.github.io/AWS-iGenomes/", side: "above",
     blurb: "AWS iGenomes bucket with prebuilt GATK reference bundles such as GATK.GRCh38. sarek, bamtofastq, seqinspector, createpanelrefs, variantprioritization, variantbenchmarking, tumourevo and hlatyping read it through --genome and --igenomes_base.",
     takes: "", gives: "FASTA, indices, dbSNP, known indels, germline resource" },
-  { id: "references", x: 400, y: 80, rel: "1.1.0", tag: "planned", side: "above",
+  { id: "references", x: 400, y: 80, p: [80, 380, "above"], rel: "1.1.0", tag: "planned", side: "above",
     blurb: "Builds reference indices once and describes them in a YAML datasheet that pipelines read.",
     takes: "FASTA, GTF", gives: "bwamem1, bwamem2, dragmap, faidx, dict, intervals, msisensorpro, tabix" },
-  { id: "createpanelrefs", x: 640, y: 80, rel: "1.1.0", side: "above",
+  { id: "createpanelrefs", x: 640, y: 80, p: [80, 620, "below"], rel: "1.1.0", side: "above",
     blurb: "Builds panels of normals from a cohort of normal samples.",
     takes: "Normal BAM/CRAM cohort", gives: "Mutect2 PON, CNVkit reference, GATK gCNV models, Gens PON" },
-  { id: "annotation-cache", x: 770, y: 138, ext: true, url: "https://annotation-cache.github.io/", side: "below",
+  { id: "annotation-cache", x: 770, y: 138, p: [138, 770, "right"], ext: true, url: "https://annotation-cache.github.io/", side: "below",
     blurb: "Public S3 bucket of VEP and snpEff caches, read by sarek with --download_cache.",
     takes: "Caches built by downloadvepcache and downloadsnpeffcache", gives: "VEP cache, snpEff cache" },
-  { id: "downloadvepcache", x: 920, y: 80, rel: "116", side: "above", url: "https://github.com/annotation-cache/downloadvepcache",
+  { id: "downloadvepcache", x: 920, y: 80, p: [80, 920, "below"], rel: "116", side: "above", url: "https://github.com/annotation-cache/downloadvepcache",
     blurb: "Downloads Ensembl VEP caches for the annotation-cache bucket.",
     takes: "Species, assembly, VEP version", gives: "VEP cache (Ensembl 116)" },
-  { id: "downloadsnpeffcache", x: 920, y: 196, rel: "99", side: "below", url: "https://github.com/annotation-cache/downloadsnpeffcache",
+  { id: "downloadsnpeffcache", x: 920, y: 196, p: [196, 920, "below2"], rel: "99", side: "below", url: "https://github.com/annotation-cache/downloadsnpeffcache",
     blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
     takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
-  { id: "variantprioritization", x: 920, y: 455, rel: "1.0.0", side: "below",
+  { id: "variantprioritization", x: 920, y: 455, p: [455, 920, "below2"], rel: "1.0.0", side: "below",
     blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
     takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
-  { id: "variantbenchmarking", x: 920, y: 311, rel: "1.6.1", side: "below",
+  { id: "variantbenchmarking", x: 920, y: 311, p: [311, 920, "below"], rel: "1.6.1", side: "below",
     blurb: "Compares variant calls against a truth set and reports precision and recall per caller.",
     takes: "Samplesheet: id, caller, test_vcf; --truth_vcf", gives: "Benchmark metrics and plots" },
-  { id: "tumourevo", x: 920, y: 600, rel: "1.0.0", side: "below",
+  { id: "tumourevo", x: 920, y: 600, p: [600, 920, "below"], rel: "1.0.0", side: "below",
     blurb: "Reconstructs tumour evolution: subclonal deconvolution, driver annotation and mutational signatures, for one or many samples per patient.",
     takes: "Samplesheet: dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller, cancer_type", gives: "Subclonal clusters, drivers, signatures" },
-  { id: "epitopeprediction", x: 640, y: 600, rel: "3.2.0", side: "below",
+  { id: "epitopeprediction", x: 640, y: 600, p: [600, 620, "below"], rel: "3.2.0", side: "below",
     blurb: "Predicts which mutated peptides bind the patient's HLA alleles, for MHC class I or II.",
     takes: "Samplesheet: sample, alleles, mhc_class, filename (raw somatic VCF), germline_vcf, tumor_sample", gives: "Ranked neoepitope predictions" },
-  { id: "hlatyping", x: 400, y: 600, rel: "2.2.0", side: "below",
+  { id: "hlatyping", x: 400, y: 600, p: [600, 380, "above"], rel: "2.2.0", side: "below",
     blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
     takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
+// Portrait phones use their own layout: p holds each station's [x, y, label side] for it.
+const portrait = matchMedia("(max-width: 640px) and (orientation: portrait)");
+portrait.addEventListener("change", () => location.reload());
+if (portrait.matches) S.forEach(s => [s.x, s.y, s.side] = s.p);
 const E = [
   { f: "fetchngs", t: "seqinspector", line: "reads", st: "planned", via: "samplesheet/samplesheet.csv, then --input",
     note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
@@ -261,6 +266,7 @@ function rounded(pts) {
 }
 
 const svg = document.getElementById("map");
+if (portrait.matches) { svg.classList.add("portrait"); svg.setAttribute("viewBox", "-40 0 800 1060"); }
 const gL = el("g"), gD = el("g"), gS = el("g");
 svg.append(gL, gD, gS);
 
@@ -283,7 +289,9 @@ E.forEach((e, i) => {
   }
 });
 
-const LBL = { left: [-18, 5, "end"], above: [0, -32, "middle"], below: [0, 32, "middle"], inside: [0, 0, "middle"] };
+// Portrait labels are larger, so their offsets grow by F.
+const F = portrait.matches ? 1.5 : 1;
+const LBL = { left: [-18, 5, "end"], right: [18, 5, "start"], above: [0, -32, "middle"], below: [0, 32, "middle"], below2: [0, 74, "middle"], inside: [0, 0, "middle"] };
 const hexPts = s => [-90, -30, 30, 90, 150, 210].map(a => { const r = a * Math.PI / 180;
   return `${(s.x + HEX_R * Math.cos(r)).toFixed(1)},${(s.y + HEX_R * Math.sin(r)).toFixed(1)}`; }).join(" ");
 const mark = s => s.hub ? el("polygon", { points: hexPts(s) })
@@ -291,10 +299,10 @@ const mark = s => s.hub ? el("polygon", { points: hexPts(s) })
   : el("circle", { cx: s.x, cy: s.y, r: 10, class: "mark" });
 S.forEach(s => {
   s.node = el("g", { class: ["stn", s.hub && "hub", s.tag].filter(Boolean).join(" "), role: "button", "aria-label": s.id });
-  const [dx, dy, anc] = LBL[s.side];
+  const [dx, dy, anc] = LBL[s.side].map(v => typeof v === "number" ? v * F : v);
   s.node.append(mark(s),
     el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc, class: "name" }, s.id),
-    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
+    el("text", { x: s.x + dx, y: s.y + dy + 15 * F, "text-anchor": anc, class: "ver" }, release(s)));
   activate(s.node, () => selectStation(s)); gS.append(s.node);
 });
 
