@@ -349,7 +349,7 @@ document.getElementById("legend").innerHTML =
 function row(cells, open) {
   const tr = document.createElement("tr");
   tr.className = "clickable"; tr.innerHTML = cells;
-  activate(tr, () => { open(); svg.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); });
+  activate(tr, () => { open(); document.querySelector(".main").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "end" }); });
   return tr;
 }
 document.getElementById("t-st").append(...S.map(s =>
