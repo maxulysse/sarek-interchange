@@ -23,7 +23,7 @@
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 20px; }
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h2 { font: 800 18px/1.2 var(--display); margin: 0; }
 .sub { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
@@ -35,7 +35,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
 @media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .map { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
-.map svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.map svg { display: block; width: 100%; height: auto; } .map svg:not(.narrow) { min-width: 760px; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
@@ -152,6 +152,10 @@ const S = [
     blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
     takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
+// Narrow screens fit the whole map to their width and scale every label by F so it stays readable.
+const narrow = matchMedia("(max-width: 640px)");
+narrow.addEventListener("change", () => location.reload());
+const F = narrow.matches ? 1.8 : 1;
 const E = [
   { f: "fetchngs", t: "seqinspector", line: "reads", st: "planned", via: "samplesheet/samplesheet.csv, then --input",
     note: "No --nf_core_pipeline needed: every fetchngs sheet starts with sample, fastq_1, fastq_2. Not yet run with the extra metadata columns." },
@@ -261,6 +265,8 @@ function rounded(pts) {
 }
 
 const svg = document.getElementById("map");
+if (narrow.matches) { const pad = 100 * (F - 1);
+  svg.classList.add("narrow"); svg.setAttribute("viewBox", `${-pad} ${-pad / 2} ${1000 + 2 * pad} ${680 + pad}`); }
 const gL = el("g"), gD = el("g"), gS = el("g");
 svg.append(gL, gD, gS);
 
@@ -292,9 +298,11 @@ const mark = s => s.hub ? el("polygon", { points: hexPts(s) })
 S.forEach(s => {
   s.node = el("g", { class: ["stn", s.hub && "hub", s.tag].filter(Boolean).join(" "), role: "button", "aria-label": s.id });
   const [dx, dy, anc] = LBL[s.side];
-  s.node.append(mark(s),
-    el("text", { x: s.x + dx, y: s.y + dy, "text-anchor": anc, class: "name" }, s.id),
-    el("text", { x: s.x + dx, y: s.y + dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
+  // The hub label sits inside the fixed-size hexagon, so it keeps its size.
+  const label = el("g", { transform: `translate(${s.x},${s.y}) scale(${s.hub ? 1 : F})` });
+  label.append(el("text", { x: dx, y: dy, "text-anchor": anc, class: "name" }, s.id),
+    el("text", { x: dx, y: dy + 15, "text-anchor": anc, class: "ver" }, release(s)));
+  s.node.append(mark(s), label);
   activate(s.node, () => selectStation(s)); gS.append(s.node);
 });
 
@@ -349,7 +357,7 @@ document.getElementById("legend").innerHTML =
 function row(cells, open) {
   const tr = document.createElement("tr");
   tr.className = "clickable"; tr.innerHTML = cells;
-  activate(tr, () => { open(); svg.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); });
+  activate(tr, () => { open(); document.querySelector(".main").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "end" }); });
   return tr;
 }
 document.getElementById("t-st").append(...S.map(s =>
