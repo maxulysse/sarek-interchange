@@ -13,9 +13,6 @@
   --body: "Inter", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
-  --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1412; --surface: #18201c; --fg: #e6ece9; --muted: #98a59f; --rule: #2b3631;
   --reads: #48c07a; --res: #63a0e6; --out: #ec8a4f; --hub: #24af63; --hub-fg: #0f1412; color-scheme: dark }
@@ -75,7 +72,12 @@ footer { color: var(--muted); font-size: 13px; }
 header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
 .theme { flex: none; font: 500 13px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--rule); border-radius: 99px; padding: 6px 14px; cursor: pointer; }
 </style>
-<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+<script>
+// data-theme always holds the active theme: the stored choice, else the system setting. It is set before paint.
+let stored = null;
+try { stored = localStorage.getItem("theme"); } catch {}
+document.documentElement.dataset.theme = stored ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+</script>
 
 <div class="wrap">
   <header>
@@ -373,18 +375,20 @@ document.getElementById("t-e").append(...E.map(e =>
 
 // Theme toggle: the choice is stored in this browser and overrides the system setting.
 const root = document.documentElement, themeBtn = document.getElementById("theme");
-const systemDark = matchMedia("(prefers-color-scheme: dark)");
-const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : systemDark.matches;
+const isDark = () => root.dataset.theme === "dark";
 function labelTheme() {
   themeBtn.textContent = isDark() ? "☀ Light" : "☾ Dark";
   themeBtn.setAttribute("aria-label", `Switch to ${isDark() ? "light" : "dark"} mode`);
 }
 themeBtn.addEventListener("click", () => {
   root.dataset.theme = isDark() ? "light" : "dark";
-  try { localStorage.setItem("theme", root.dataset.theme); } catch {}
+  stored = root.dataset.theme;
+  try { localStorage.setItem("theme", stored); } catch {}
   labelTheme();
 });
-systemDark.addEventListener("change", labelTheme);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ev => {
+  if (!stored) { root.dataset.theme = ev.matches ? "dark" : "light"; labelTheme(); }
+});
 labelTheme();
 
 reset();
