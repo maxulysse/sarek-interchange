@@ -262,7 +262,6 @@ const gL = el("g"), gD = el("g"), gS = el("g");
 svg.append(gL, gD, gS);
 
 // Each station and edge keeps its own SVG node, so selection needs no DOM lookups.
-const targets = [...new Set(E.map(e => e.t))];
 E.forEach((e, i) => {
   e.id = "e" + i;
   const d = pathFor(e);
@@ -274,7 +273,7 @@ E.forEach((e, i) => {
   if (!reduced) {
     const c = el("circle", { r: 4, class: `dot ${e.st}` });
     // Balls flowing into the same station share one timing, so they leave and arrive together.
-    const k = targets.indexOf(e.t);
+    const k = S.indexOf(byId[e.t]);
     const am = el("animateMotion", { dur: `${5 + (k % 4)}s`, repeatCount: "indefinite", begin: `${-k * 0.7}s` });
     const mp = el("mpath"); mp.setAttribute("href", "#" + e.id);
     am.append(mp); c.append(am); gD.append(c);
