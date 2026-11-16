@@ -39,7 +39,7 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 
 .line { fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
 .line.reads { stroke: var(--reads); } .line.res { stroke: var(--res); } .line.out { stroke: var(--out); }
-.line.reshape { stroke-dasharray: 14 9; } .line.unchecked { stroke-dasharray: 1 11; } .line.planned { stroke-opacity: .35; }
+.line.reshape { stroke-dasharray: 14 9; } .line.planned { stroke-opacity: .35; }
 .hit { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
 .stn { cursor: pointer; }
 .mark { fill: var(--surface); stroke: var(--fg); stroke-width: 4; transform-box: fill-box; transform-origin: center; transition: transform .15s; }
@@ -59,7 +59,7 @@ svg.focus .on { opacity: 1 !important; }
 .card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .pill { display: inline-block; font: 600 11px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1.5px solid currentColor; }
-.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.unchecked { color: var(--muted); } .pill.planned { color: var(--res); }
+.pill.native { color: var(--reads); } .pill.reshape { color: var(--out); } .pill.planned { color: var(--res); }
 .card a { color: var(--res); }
 .card p { margin: 0; }
 
@@ -172,7 +172,7 @@ const E = [
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
 
-const ST = { native: "Native", reshape: "Needs reshaping", unchecked: "Not checked", planned: "Planned" };
+const ST = { native: "Native", reshape: "Needs reshaping", planned: "Planned" };
 const LN = { reads: "Input data", res: "Resources", out: "Results out" };
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, txt) => { const e = document.createElementNS(NS, n);
