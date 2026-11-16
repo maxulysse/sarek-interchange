@@ -85,7 +85,7 @@ footer { color: var(--muted); font-size: 13px; }
   <div class="legend" id="legend"></div>
 
   <div class="main">
-    <div class="map"><svg id="map" viewBox="0 0 1000 590" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
+    <div class="map"><svg id="map" viewBox="0 0 1000 760" role="group" aria-label="Map of pipelines connected to nf-core/sarek"></svg></div>
     <aside class="card" id="card" aria-live="polite"></aside>
   </div>
 
@@ -133,12 +133,21 @@ const S = [
   { id: "downloadsnpeffcache", x: 920, y: 240, rel: "99", side: "below", url: "https://github.com/annotation-cache/downloadsnpeffcache",
     blurb: "Downloads snpEff databases for the annotation-cache bucket. Stays on 99: snpEff 5.2 and later have no 105 databases.",
     takes: "snpEff genome and version", gives: "snpEff cache (GRCh38.99)" },
-  { id: "variantprioritization", x: 920, y: 520, rel: "1.0.0", side: "below",
+  { id: "variantprioritization", x: 920, y: 500, rel: "1.0.0", side: "below",
     blurb: "Filters and ranks somatic and germline variants, with copy-number input and a panel of normals.",
     takes: "Samplesheet: patient, status, sample, vcf, cna", gives: "Ranked variant reports" },
   { id: "variantbenchmarking", x: 920, y: 400, rel: "1.6.1", side: "below",
     blurb: "Compares variant calls against a truth set and reports precision and recall per caller.",
     takes: "Samplesheet: id, caller, test_vcf; --truth_vcf", gives: "Benchmark metrics and plots" },
+  { id: "tumourevo", x: 920, y: 600, rel: "1.0.0", side: "below",
+    blurb: "Reconstructs tumour evolution: subclonal deconvolution, driver annotation and mutational signatures, for one or many samples per patient.",
+    takes: "Samplesheet: dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller, cancer_type", gives: "Subclonal clusters, drivers, signatures" },
+  { id: "epitopeprediction", x: 920, y: 700, rel: "3.2.0", side: "below",
+    blurb: "Predicts which mutated peptides bind the patient's HLA alleles, for MHC class I or II.",
+    takes: "Samplesheet: sample, alleles, mhc_class, filename (raw somatic VCF), germline_vcf, tumor_sample", gives: "Ranked neoepitope predictions" },
+  { id: "hlatyping", x: 700, y: 700, rel: "2.2.0", side: "below",
+    blurb: "Types HLA alleles from DNA or RNA reads with OptiType (class I), and with HLA-HD (class II) when installed.",
+    takes: "Samplesheet: sample, fastq_1, fastq_2 or bam, seq_type", gives: "HLA genotype: OptiType TSV, HLA-HD result" },
 ];
 const HUB = { id: "sarek", x: 520, y: 320, rel: "3.12.0",
   blurb: "Germline and somatic variant calling from WGS, WES and panels: alignment, preprocessing, 20+ callers, VEP and snpEff annotation. Restart any step with --step and the CSVs in {outdir}/preprocessing/csv.",
@@ -165,10 +174,18 @@ const E = [
     note: "Builds the snpEff side of the bucket." },
   { f: "annotation-cache", t: "sarek", hp: ["r", -30], line: "res", st: "native", via: "--download_cache, --vep_cache, --snpeff_cache",
     note: "Sarek pulls the matching cache for --tools vep,snpeff." },
-  { f: "sarek", t: "variantprioritization", hp: ["r", 30], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
+  { f: "sarek", t: "variantprioritization", hp: ["r", 18], line: "out", st: "reshape", via: "annotated/*.vcf.gz into patient, status, sample, vcf, cna",
     note: "Same patient, status and sample IDs as sarek. Sarek writes no sheet for it, so build it by hand." },
-  { f: "sarek", t: "variantbenchmarking", hp: ["r", 8], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
+  { f: "sarek", t: "variantbenchmarking", hp: ["r", 6], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into id, caller, test_vcf",
     note: "One row per caller VCF, plus --truth_vcf. Sarek writes no sheet for it." },
+  { f: "sarek", t: "tumourevo", hp: ["r", 30], line: "out", st: "reshape", via: "variant_calling/{mutect2,strelka,sentieon_tnscope} VCF and ascat/*.{segments,purityploidy}.txt into dataset, patient, tumour_sample, normal_sample, vcf, tbi, cna_segments, cna_extra, cna_caller",
+    note: "tumourevo takes Mutect2, Strelka or TNscope calls and ASCAT copy numbers, so set cna_caller to ASCAT. Sarek writes no sheet for it." },
+  { f: "sarek", t: "epitopeprediction", hp: ["b", 40], line: "out", st: "reshape", via: "variant_calling/*/*.vcf.gz into sample, alleles, mhc_class, filename, germline_vcf, tumor_sample",
+    note: "Give the raw somatic VCF, not the annotated one: epitopeprediction runs VEP itself. Set tumor_sample for multi-sample VCFs (Strelka: TUMOR) and germline_vcf to the normal's germline calls." },
+  { f: "sarek", t: "hlatyping", hp: ["b", 20], line: "out", st: "reshape", via: "--save_output_as_bam, then the preprocessing BAM into sample, bam, seq_type",
+    note: "hlatyping takes BAM, not CRAM. It extracts the reads again and maps them to the HLA region." },
+  { f: "hlatyping", t: "epitopeprediction", line: "out", st: "reshape", via: "results/*/*_result.tsv into alleles",
+    note: "Join the OptiType alleles into one string (A*01:01;B*07:02;...) or a .txt file with one allele per line. HLA-HD, for class II, ships without its licence." },
   { f: "sarek", t: "bamtofastq", hp: ["l", 32], sp: 6, line: "out", st: "reshape", via: "preprocessing/csv/*.csv into sample_id, mapped, index, file_type",
     note: "Map sample to sample_id, cram and crai to mapped and index, and set file_type to cram. Gives FASTQ back from sarek's CRAMs." },
 ];
@@ -183,7 +200,7 @@ const byId = Object.fromEntries(all.map(s => [s.id, s]));
 const release = s => s.ext ? "resource" : s.rel;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Edges enter the hub on a named face ("l", "r" or "t") at a fixed offset, so parallel lines
+// Edges enter the hub on a named face ("l", "r", "t" or "b") at a fixed offset, so parallel lines
 // arrive side by side like tracks into an interchange.
 // "sp" shifts an edge's station end vertically, so paired tracks sit either side of the station centre.
 // Hub is a pointy-top hexagon like the nf-core pipeline logos; HEX_R is centre to vertex.
@@ -191,7 +208,7 @@ const HEX_R = 72;
 function port(s, e) {
   if (s !== HUB) return [s.x, s.y + (e.sp ?? 0)];
   const [face, off] = e.hp;
-  if (face === "t") return [HUB.x + off, HUB.y - (HEX_R - Math.abs(off) / Math.sqrt(3))];
+  if (face === "t" || face === "b") return [HUB.x + off, HUB.y + (face === "b" ? 1 : -1) * (HEX_R - Math.abs(off) / Math.sqrt(3))];
   return [HUB.x + (face === "r" ? 1 : -1) * HEX_R * Math.sqrt(3) / 2, HUB.y + off];
 }
 // Octilinear routing, like a subway map: straight runs joined by one 45-degree diagonal,
